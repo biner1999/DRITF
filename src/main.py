@@ -4,7 +4,10 @@ import pygame
 from pygame.locals import *
 from pygame.joystick import *
 pygame.init()
-pygame.joystick.init()
+#pygame.joystick.init()
+pygame.joystick.Joystick(0).init()
+joysticks = [pygame.joystick.Joystick(x) 
+for x in range(pygame.joystick.get_count())]
 clock = pygame.time.Clock()
 
 #Set up a window and a window resolution
@@ -25,11 +28,34 @@ while running:
         if event.type == KEYDOWN:
             if event.key == K_RIGHT:
                 pass
+        if event.type == pygame.JOYBUTTONDOWN:
+            #Gear down
+            print(pygame.joystick.Joystick(0).get_button(4))
+            #Gear up
+            print(pygame.joystick.Joystick(0).get_button(5))
+            #Clutch
+            print(pygame.joystick.Joystick(0).get_button(0))
+            #Handbreak
+            print(pygame.joystick.Joystick(0).get_button(1))
+        if event.type == pygame.JOYBUTTONUP:
+            #Gear down
+            print(pygame.joystick.Joystick(0).get_button(4))
+            #Gear up
+            print(pygame.joystick.Joystick(0).get_button(5))
+            #Clutch
+            print(pygame.joystick.Joystick(0).get_button(0))
+            #Handbreak
+            print(pygame.joystick.Joystick(0).get_button(1))
+        if event.type == pygame.JOYAXISMOTION:
+            #UP and LEFT is negative
+            #Steering
+            print("LS L/R = " + str(pygame.joystick.Joystick(0).get_axis(0)))
+            #Goes from -1.0 to 1.0
+            #Break
+            print("LT = " + str(pygame.joystick.Joystick(0).get_axis(4)))
+            #Throttle
+            print("RT = " + str(pygame.joystick.Joystick(0).get_axis(5)))
     
-
-    print(pygame.joystick.get_axis(1))
-
-
 
     #Background color
     screen.fill((255, 255, 255))
