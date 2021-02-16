@@ -1,6 +1,5 @@
-#Importing and initializing PyGame
-#
-import pygame
+#Imports
+import pygame, sys, time
 from pygame.locals import *
 from pygame.joystick import *
 pygame.init()
@@ -15,11 +14,17 @@ pygame.display.set_caption("DRITF!")
 win_res = (500, 500)
 screen = pygame.display.set_mode(win_res,0,32)
 
+last_time = time.time()
+targetFramerate = 144
+pos = 0
 # Run until the user asks to quit
 running = True
-
 while running:
 
+    dt = time.time() - last_time
+    last_time = time.time()
+    dt = dt * targetFramerate
+    pos += 1 * dt
 
     #Checks if user presses the X button to close the window
     for event in pygame.event.get():
@@ -62,12 +67,12 @@ while running:
 
 
     #Test circle
-    pygame.draw.circle(screen, (0, 0, 255), (250, 250), 75)
+    pygame.draw.circle(screen, (0, 0, 255), (pos, 250), 75)
 
 
     #Updates display
     pygame.display.update()
-    clock.tick(60)
+    clock.tick(targetFramerate)
 
 
 #Quit
