@@ -1,22 +1,22 @@
-#Imports
+# Imports
 import pygame, sys, time
 from pygame.locals import *
 from pygame.joystick import *
 import constants
-#Intializations of PyGame and Joystick module
+# Intializations of PyGame and Joystick module
 pygame.init()
 pygame.joystick.Joystick(0).init()
 joysticks = [pygame.joystick.Joystick(x) 
 for x in range(pygame.joystick.get_count())]
 
-#Set up a window and a window resolution
+# Set up a window and a window resolution
 pygame.display.set_caption("DRITF!")
 win_res = (1000, 1000)
 screen = pygame.display.set_mode(win_res,0,32)
 
 pos = 0
 
-#Framerate clock
+# Framerate clock
 last_time = time.time()
 clock = pygame.time.Clock()
 
@@ -29,7 +29,7 @@ while running:
     dt = dt * constants.TARGET_FRAMERATE
     pos += 1 * dt
 
-    #Checks if user presses the X button to close the window
+    # Checks if user presses the X button to close the window
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -65,17 +65,17 @@ while running:
             print("RT = " + str(pygame.joystick.Joystick(0).get_axis(5)))
     
 
-    #Background color
+    # Background color
     screen.fill((255, 255, 255))
 
-    #Test circle
+    # Test circle
     pygame.draw.circle(screen, (0, 0, 255), (pos, 250), 75)
 
-    #Updates display
+    # Updates display
     pygame.display.update()
     clock.tick(constants.TARGET_FRAMERATE)
 
 
-#Quit
+# Quit
 pygame.joystick.quit()
 pygame.quit()
