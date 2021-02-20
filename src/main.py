@@ -1,5 +1,12 @@
 # Imports
-import pygame, sys, time
+import pygame
+import sys
+import time
+import esper
+import components
+import processes
+
+
 from pygame.locals import *
 from pygame.joystick import *
 import constants
@@ -14,68 +21,93 @@ pygame.display.set_caption("DRITF!")
 win_res = (1000, 1000)
 screen = pygame.display.set_mode(win_res,0,32)
 
-pos = 0
 
-# Framerate clock
-last_time = time.time()
-clock = pygame.time.Clock()
 
-# Run until the user asks to quit
-running = True
-while running:
+world = esper.World()
 
-    dt = time.time() - last_time
+
+car = world.create_entity()
+world.add_component(car, components.Position(x=0, y=250))
+world.add_component(car, components.Velocity(x=1,y=0))
+world.add_component(car, components.DeltaTime(dt=0))
+img = pygame.image.load("assets/car_black_5.png")
+world.add_component(car, components.Sprite(sprite=img))
+#world.add_component(car, components.Sprite(sprite="car.png"))
+
+world.add_processor(processes.MovementProcessor())
+world.add_processor(processes.RenderProcessor(renderer=screen))
+
+def gameLoop():
+
+    # Framerate clock
     last_time = time.time()
-    dt = dt * constants.TARGET_FRAMERATE
-    pos += 1 * dt
+    clock = pygame.time.Clock()
 
-    # Checks if user presses the X button to close the window
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == KEYDOWN:
-            if event.key == K_RIGHT:
-                pass
-        if event.type == pygame.JOYBUTTONDOWN:
-            #Gear down
-            print(pygame.joystick.Joystick(0).get_button(4))
-            #Gear up
-            print(pygame.joystick.Joystick(0).get_button(5))
-            #Clutch
-            print(pygame.joystick.Joystick(0).get_button(0))
-            #Handbreak
-            print(pygame.joystick.Joystick(0).get_button(1))
-        if event.type == pygame.JOYBUTTONUP:
-            #Gear down
-            print(pygame.joystick.Joystick(0).get_button(4))
-            #Gear up
-            print(pygame.joystick.Joystick(0).get_button(5))
-            #Clutch
-            print(pygame.joystick.Joystick(0).get_button(0))
-            #Handbreak
-            print(pygame.joystick.Joystick(0).get_button(1))
-        if event.type == pygame.JOYAXISMOTION:
-            #UP and LEFT is negative
-            #Steering
-            print("LS L/R = " + str(pygame.joystick.Joystick(0).get_axis(0)))
-            #Goes from -1.0 to 1.0
-            #Break
-            print("LT = " + str(pygame.joystick.Joystick(0).get_axis(4)))
-            #Throttle
-            print("RT = " + str(pygame.joystick.Joystick(0).get_axis(5)))
-    
+    # Run until the user asks to quit
+    running = True
+    pos = 0
 
-    # Background color
-    screen.fill((255, 255, 255))
+    while running:
+        screen.blit(img, [50, 50])
 
-    # Test circle
-    pygame.draw.circle(screen, (0, 0, 255), (pos, 250), 75)
+        # Input
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == KEYDOWN:
+                if event.key == K_RIGHT:
+                    pass
+            if event.type == pygame.JOYBUTTONDOWN:
+                #Gear down
+                print(pygame.joystick.Joystick(0).get_button(4))
+                #Gear up
+                print(pygame.joystick.Joystick(0).get_button(5))
+                #Clutch
+                print(pygame.joystick.Joystick(0).get_button(0))
+                #Handbreak
+                print(pygame.joystick.Joystick(0).get_button(1))
+            if event.type == pygame.JOYBUTTONUP:
+                #Gear down
+                print(pygame.joystick.Joystick(0).get_button(4))
+                #Gear up
+                print(pygame.joystick.Joystick(0).get_button(5))
+                #Clutch
+                print(pygame.joystick.Joystick(0).get_button(0))
+                #Handbreak
+                print(pygame.joystick.Joystick(0).get_button(1))
+            if event.type == pygame.JOYAXISMOTION:
+                #UP and LEFT is negative
+                #Steering
+                print("LS L/R = " + str(pygame.joystick.Joystick(0).get_axis(0)))
+                #Goes from -1.0 to 1.0
+                #Break
+                print("LT = " + str(pygame.joystick.Joystick(0).get_axis(4)))
+                #Throttle
+                print("RT = " + str(pygame.joystick.Joystick(0).get_axis(5)))
+        
+        
+        # Delta time to make sure everything runs as if its always 60 FPS
+        dt = time.time() - last_time
+        last_time = time.time()
+        dt = dt * constants.TARGET_FRAMERATE
+        world.component_for_entity(car, components.DeltaTime).dt = dt
+        # Background color
+        screen.fill((255, 255, 255))
+        # Update the game
+        world.process()
 
-    # Updates display
-    pygame.display.update()
-    clock.tick(constants.TARGET_FRAMERATE)
 
+
+        # Test circle
+        #pygame.draw.circle(screen, (0, 0, 255), (pos, 250), 75)
+
+        # Updates display
+        pygame.display.update()
+        clock.tick(constants.TARGET_FRAMERATE)
+
+
+gameLoop()
 
 # Quit
-pygame.joystick.quit()
+#pygame.joystick.quit()
 pygame.quit()
