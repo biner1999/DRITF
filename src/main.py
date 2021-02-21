@@ -3,8 +3,8 @@ import pygame
 import sys
 import time
 import esper
-import components
-import processes
+import components as com
+import processes as pro
 
 
 from pygame.locals import *
@@ -27,18 +27,20 @@ world = esper.World()
 
 
 car = world.create_entity()
-world.add_component(car, components.Position(x=0, y=250))
-world.add_component(car, components.Velocity(x=1,y=0))
-world.add_component(car, components.DeltaTime(dt=0))
+world.add_component(car, com.Position(x=0, y=250))
+world.add_component(car, com.Velocity(x=1,y=0))
+world.add_component(car, com.DeltaTime(dt=0))
 img = pygame.image.load("assets/car_black_5.png")
-world.add_component(car, components.Sprite(sprite=img))
-#world.add_component(car, components.Sprite(sprite="car.png"))
+world.add_component(car, com.Sprite(sprite=img))
+world.add_component(car, com.Steering(angle=0))
+#world.add_component(car, com.Sprite(sprite="car.png"))
 
-world.add_processor(processes.MovementProcessor())
-world.add_processor(processes.RenderProcessor(renderer=screen))
+world.add_processor(pro.MovementProcessor())
+#world.add_processor(pro.SteeringProcessor())
+world.add_processor(pro.RenderProcessor(renderer=screen))
+
 
 def gameLoop():
-
     # Framerate clock
     last_time = time.time()
     clock = pygame.time.Clock()
@@ -48,7 +50,6 @@ def gameLoop():
     pos = 0
 
     while running:
-        screen.blit(img, [50, 50])
 
         # Input
         for event in pygame.event.get():
@@ -78,24 +79,29 @@ def gameLoop():
             if event.type == pygame.JOYAXISMOTION:
                 #UP and LEFT is negative
                 #Steering
-                print("LS L/R = " + str(pygame.joystick.Joystick(0).get_axis(0)))
+                #print("LS L/R = " + str(pygame.joystick.Joystick(0).get_axis(0)))
+                if pygame.joystick.Joystick(0).get_axis(0) < -0.2:
+                    world.component_for_entity(car, com.Steering).angle = (pygame.joystick.Joystick(0).get_axis(0)*1.25 + 0.25)*-35
+                elif pygame.joystick.Joystick(0).get_axis(0) > 0.2:
+                    world.component_for_entity(car, com.Steering).angle = (pygame.joystick.Joystick(0).get_axis(0)*1.25 - 0.25)*-35
+                else:
+                    world.component_for_entity(car, com.Steering).angle = 0
+                
                 #Goes from -1.0 to 1.0
                 #Break
-                print("LT = " + str(pygame.joystick.Joystick(0).get_axis(4)))
+                #print("LT = " + str(pygame.joystick.Joystick(0).get_axis(4)))
                 #Throttle
-                print("RT = " + str(pygame.joystick.Joystick(0).get_axis(5)))
-        
+                #print("RT = " + str(pygame.joystick.Joystick(0).get_axis(5)))
         
         # Delta time to make sure everything runs as if its always 60 FPS
         dt = time.time() - last_time
         last_time = time.time()
         dt = dt * constants.TARGET_FRAMERATE
-        world.component_for_entity(car, components.DeltaTime).dt = dt
+        world.component_for_entity(car, com.DeltaTime).dt = dt
         # Background color
         screen.fill((255, 255, 255))
         # Update the game
         world.process()
-
 
 
         # Test circle

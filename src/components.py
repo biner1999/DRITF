@@ -20,3 +20,8 @@ class Velocity:
 class Sprite:
     def __init__(self, sprite):
         self.sprite = sprite
+
+
+class Steering:
+    def __init__(self, angle):
+        self.angle = angle
