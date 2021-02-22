@@ -21,24 +21,21 @@ pygame.display.set_caption("DRITF!")
 win_res = (1000, 1000)
 screen = pygame.display.set_mode(win_res,0,32)
 
-
-
 world = esper.World()
 
 
 car = world.create_entity()
-world.add_component(car, com.Position(x=0, y=250))
-world.add_component(car, com.Velocity(x=1,y=0))
+world.add_component(car, com.Position(initV=([50, 50])))
+world.add_component(car, com.Velocity(vel=0))
 world.add_component(car, com.DeltaTime(dt=0))
 img = pygame.image.load("assets/car_black_5.png")
 world.add_component(car, com.Sprite(sprite=img))
 world.add_component(car, com.Steering(angle=0))
-#world.add_component(car, com.Sprite(sprite="car.png"))
+world.add_component(car, com.DirVector(initV=([0,-1])))
 
 world.add_processor(pro.MovementProcessor())
 #world.add_processor(pro.SteeringProcessor())
 world.add_processor(pro.RenderProcessor(renderer=screen))
-
 
 def gameLoop():
     # Framerate clock
@@ -79,21 +76,23 @@ def gameLoop():
             if event.type == pygame.JOYAXISMOTION:
                 #UP and LEFT is negative
                 #Steering
-                #print("LS L/R = " + str(pygame.joystick.Joystick(0).get_axis(0)))
                 if pygame.joystick.Joystick(0).get_axis(0) < -0.2:
                     world.component_for_entity(car, com.Steering).angle = (pygame.joystick.Joystick(0).get_axis(0)*1.25 + 0.25)*-35
                 elif pygame.joystick.Joystick(0).get_axis(0) > 0.2:
                     world.component_for_entity(car, com.Steering).angle = (pygame.joystick.Joystick(0).get_axis(0)*1.25 - 0.25)*-35
                 else:
                     world.component_for_entity(car, com.Steering).angle = 0
-                
+
+                #Throttle
+                #print("RT = " + str(pygame.joystick.Joystick(0).get_axis(5)))
+                if pygame.joystick.Joystick(0).get_axis(5) >= -0.99:
+                    world.component_for_entity(car, com.Velocity).vel = (pygame.joystick.Joystick(0).get_axis(5) - constants.OLD_ZAXIS_MIN) * constants.RANGE_RATIO / 100
                 #Goes from -1.0 to 1.0
                 #Break
                 #print("LT = " + str(pygame.joystick.Joystick(0).get_axis(4)))
-                #Throttle
-                #print("RT = " + str(pygame.joystick.Joystick(0).get_axis(5)))
         
         # Delta time to make sure everything runs as if its always 60 FPS
+
         dt = time.time() - last_time
         last_time = time.time()
         dt = dt * constants.TARGET_FRAMERATE

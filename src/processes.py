@@ -6,9 +6,8 @@ import components as com
 class MovementProcessor(esper.Processor):
 
     def process(self):
-        for ent, (dt, vel, pos) in self.world.get_components(com.DeltaTime, com.Velocity, com.Position):
-            pos.x += vel.x * dt.dt
-            pos.y += vel.y * dt.dt
+        for ent, (dt, velo, pos, dire) in self.world.get_components(com.DeltaTime, com.Velocity, com.Position, com.DirVector):
+            pos.posV += dire.dirV * velo.vel
 
 
 class RenderProcessor(esper.Processor):
@@ -20,7 +19,7 @@ class RenderProcessor(esper.Processor):
     def process(self):
         for ent, (spr, pos, stre) in self.world.get_components(com.Sprite, com.Position, com.Steering):
             rot_spr = pygame.transform.rotate(spr.sprite, stre.angle)
-            self.renderer.blit(rot_spr, [pos.x, pos.y])
+            self.renderer.blit(rot_spr, [pos.posV.x, pos.posV.y])
             
 class SteeringProcessor(esper.Processor):
 
