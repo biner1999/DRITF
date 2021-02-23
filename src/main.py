@@ -5,6 +5,7 @@ import time
 import esper
 import components as com
 import processes as pro
+import functions as fun
 
 
 from pygame.locals import *
@@ -32,6 +33,7 @@ img = pygame.image.load("assets/car_black_5.png")
 world.add_component(car, com.Sprite(sprite=img))
 world.add_component(car, com.Steering(angle=0))
 world.add_component(car, com.DirVector(initV=([0,-1])))
+world.add_component(car, com.Tyre(diameter=25))
 
 world.add_processor(pro.MovementProcessor())
 #world.add_processor(pro.SteeringProcessor())
@@ -86,7 +88,7 @@ def gameLoop():
                 #Throttle
                 #print("RT = " + str(pygame.joystick.Joystick(0).get_axis(5)))
                 if pygame.joystick.Joystick(0).get_axis(5) >= -0.99:
-                    world.component_for_entity(car, com.Velocity).vel = (pygame.joystick.Joystick(0).get_axis(5) - constants.OLD_ZAXIS_MIN) * constants.RANGE_RATIO / 100
+                    world.component_for_entity(car, com.Velocity).vel = (pygame.joystick.Joystick(0).get_axis(5) - constants.OLD_ZAXIS_MIN) * constants.RANGE_RATIO
                 #Goes from -1.0 to 1.0
                 #Break
                 #print("LT = " + str(pygame.joystick.Joystick(0).get_axis(4)))
