@@ -2,12 +2,31 @@
 import esper
 import pygame
 import components as com
+import constants
 
-class MovementProcessor(esper.Processor):
+
+class CarAccelerationProcessor(esper.Processor):
 
     def process(self):
-        for ent, (dt, velo, pos, dire) in self.world.get_components(com.DeltaTime, com.Velocity, com.Position, com.DirVector):
-            pos.posV += dire.dirV * velo.vel * dt.dt
+        for ent, (accel, dire, velo) in self.world.get_components(com.Acceleration, com.Direction, com.Velocity):
+            accel.accV.x = ((dire.dirV.x * 500) - (constants.DRAG_COEFF * velo.velV.magnitude() * velo.velV.x) - (constants.RR_FORCE * velo.velV.x)) / 1222
+            accel.accV.y = ((dire.dirV.y * 500) - (constants.DRAG_COEFF * velo.velV.magnitude() * velo.velV.y) - (constants.RR_FORCE * velo.velV.y)) / 1222
+
+
+class CarVelocityProcessor(esper.Processor):
+
+    def process(self):
+        for ent, (dt, accel, velo) in self.world.get_components(com.DeltaTime, com.Acceleration, com.Velocity):
+            velo.velV.x += accel.accV.x * dt.dt
+            velo.velV.y += accel.accV.y * dt.dt
+
+
+class CarPositionProcessor(esper.Processor):
+
+    def process(self):
+        for ent, (dt, velo, pos) in self.world.get_components(com.DeltaTime, com.Velocity, com.Position):
+            pos.posV.x += velo.velV.x * dt.dt
+            pos.posV.y += velo.velV.y * dt.dt
 
 
 class RenderProcessor(esper.Processor):
@@ -30,5 +49,6 @@ class SteeringProcessor(esper.Processor):
 class SpeedProcessor(esper.Processor):
 
     def process(self):
-        for ent, (spd, tyre, grs, box) in self.world.get_components(com.Speed, com.Tyre, com.GearRatios, com.GearBox):
-            spd.speed = (RPM*tyre.diameter / (grs.rear_diff * grs.current_gear * 336)
+        for ent, (spd, whe, grs, box) in self.world.get_components(com.Speed, com.Wheel, com.GearRatios, com.GearBox):
+            #spd.speed = (RPM*whe.diameter / (grs.rear_diff * grs.current_gear * 336)
+            pass

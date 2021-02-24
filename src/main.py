@@ -27,17 +27,22 @@ world = esper.World()
 
 car = world.create_entity()
 world.add_component(car, com.Position(initV=([50, 50])))
-world.add_component(car, com.Velocity(vel=0))
+world.add_component(car, com.Velocity(initV=([0, 0])))
+world.add_component(car, com.Chassis(wheelbase=2.57, cgfa=1.207, cgra=1.362, cgh=0.46, mass=1222, inertia=1222, length=4.24, width=1.775, wheellenght=0.5285, wheelwidth=0.15))
 world.add_component(car, com.DeltaTime(dt=0))
 img = pygame.image.load("assets/car_black_5.png")
 world.add_component(car, com.Sprite(sprite=img))
 world.add_component(car, com.Steering(angle=0))
-world.add_component(car, com.DirVector(initV=([0,-1])))
-world.add_component(car, com.Tyre(diameter=25))
+world.add_component(car, com.Direction(initV=([0,1])))
+world.add_component(car, com.Acceleration(initV=[0, 0]))
+world.add_component(car, com.Wheel(diameter=25))
 
-world.add_processor(pro.MovementProcessor())
+world.add_processor(pro.CarAccelerationProcessor(), priority=4)
+world.add_processor(pro.CarVelocityProcessor(), priority=3)
+world.add_processor(pro.CarPositionProcessor(), priority=2)
+
 #world.add_processor(pro.SteeringProcessor())
-world.add_processor(pro.RenderProcessor(renderer=screen))
+world.add_processor(pro.RenderProcessor(renderer=screen), priority=1)
 
 def gameLoop():
     # Framerate clock
@@ -49,7 +54,7 @@ def gameLoop():
     pos = 0
 
     while running:
-
+        print(world.component_for_entity(car, com.Velocity).velV.magnitude())
         # Input
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
