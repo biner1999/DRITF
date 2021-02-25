@@ -28,6 +28,12 @@ class CarPositionProcessor(esper.Processor):
             pos.posV.x += velo.velV.x * dt.dt
             pos.posV.y += velo.velV.y * dt.dt
 
+class WeightTransferProcessor(esper.Processor):
+
+    def process(self):
+        for ent, (chas, accel) in self.world.get_components(com.Chassis, com.Acceleration):
+            chas.weight_front_dynamic = chas.weight_front_standstill - (chas.cg_height/chas.wheelbase)*chas.mass*accel.accV.magnitude()
+            chas.weight_rear_dynamic = chas.weight_rear_standstill + (chas.cg_height/chas.wheelbase)*chas.mass*accel.accV.magnitude()
 
 class RenderProcessor(esper.Processor):
 
@@ -39,16 +45,14 @@ class RenderProcessor(esper.Processor):
         for ent, (spr, pos, stre) in self.world.get_components(com.Sprite, com.Position, com.Steering):
             rot_spr = pygame.transform.rotate(spr.sprite, stre.angle)
             self.renderer.blit(rot_spr, [pos.posV.x, pos.posV.y])
-            
-class SteeringProcessor(esper.Processor):
+
+
+
+
+
+
+class XXXProcessor(esper.Processor):
 
     def process(self):
-        for ent, (spr, stre) in self.world.get_components(com.Sprite, com.Steering):
-            spr.sprite = pygame.transform.rotate(spr.sprite, stre.angle)
-
-class SpeedProcessor(esper.Processor):
-
-    def process(self):
-        for ent, (spd, whe, grs, box) in self.world.get_components(com.Speed, com.Wheel, com.GearRatios, com.GearBox):
-            #spd.speed = (RPM*whe.diameter / (grs.rear_diff * grs.current_gear * 336)
+        for ent, () in self.world.get_components():
             pass

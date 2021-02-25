@@ -27,17 +27,21 @@ class Direction:
 
 
 class Chassis:
-    def __init__(self, wheelbase, cgfa, cgra, cgh, mass, inertia, length, width, wheellenght, wheelwidth):
+    def __init__(self, wheelbase, cg_front_axle, cg_rear_axle, cg_height, mass, inertia, length, width, wheel_diameter, wheel_width):
         self.wheelbase = wheelbase
-        self.cgfa = cgfa
-        self.cgra = cgra
-        self.cgh = cgh
+        self.cg_front_axle = cg_front_axle
+        self.cg_rear_axle = cg_rear_axle
+        self.cg_height = cg_height
         self.mass = mass
         self.inertia = inertia
         self.length = length
         self.width = width
-        self.wheellength = wheellenght
-        self.wheelwidth = wheelwidth
+        self.wheel_diameter = wheel_diameter
+        self.wheel_width = wheel_width
+        self.weight_front_standstill = cg_rear_axle/wheelbase*mass
+        self.weight_rear_standstill = cg_front_axle/wheelbase*mass
+        self.weight_front_dynamic = self.weight_front_standstill
+        self.weight_rear_dynamic = self.weight_rear_standstill
 
 
 class Sprite:

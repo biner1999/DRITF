@@ -13,6 +13,8 @@ from pygame.joystick import *
 import constants
 # Intializations of PyGame and Joystick module
 pygame.init()
+
+
 pygame.joystick.Joystick(0).init()
 joysticks = [pygame.joystick.Joystick(x) 
 for x in range(pygame.joystick.get_count())]
@@ -28,7 +30,7 @@ world = esper.World()
 car = world.create_entity()
 world.add_component(car, com.Position(initV=([50, 50])))
 world.add_component(car, com.Velocity(initV=([0, 0])))
-world.add_component(car, com.Chassis(wheelbase=2.57, cgfa=1.207, cgra=1.362, cgh=0.46, mass=1222, inertia=1222, length=4.24, width=1.775, wheellenght=0.5285, wheelwidth=0.15))
+world.add_component(car, com.Chassis(wheelbase=2.57, cg_front_axle=1.208, cg_rear_axle=1.362, cg_height=0.46, mass=1222, inertia=1222, length=4.24, width=1.775, wheel_diameter=0.5285, wheel_width=0.15))
 world.add_component(car, com.DeltaTime(dt=0))
 img = pygame.image.load("assets/car_black_5.png")
 world.add_component(car, com.Sprite(sprite=img))
@@ -36,10 +38,10 @@ world.add_component(car, com.Steering(angle=0))
 world.add_component(car, com.Direction(initV=([0,1])))
 world.add_component(car, com.Acceleration(initV=[0, 0]))
 world.add_component(car, com.Wheel(diameter=25))
-
 world.add_processor(pro.CarAccelerationProcessor(), priority=4)
 world.add_processor(pro.CarVelocityProcessor(), priority=3)
 world.add_processor(pro.CarPositionProcessor(), priority=2)
+world.add_processor(pro.WeightTransferProcessor())
 
 #world.add_processor(pro.SteeringProcessor())
 world.add_processor(pro.RenderProcessor(renderer=screen), priority=1)
@@ -54,7 +56,7 @@ def gameLoop():
     pos = 0
 
     while running:
-        print(world.component_for_entity(car, com.Velocity).velV.magnitude())
+        print(world.component_for_entity(car, com.Chassis).weight_front_dynamic+world.component_for_entity(car, com.Chassis).weight_rear_dynamic )
         # Input
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
