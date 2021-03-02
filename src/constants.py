@@ -13,6 +13,7 @@ DRAG_COEFF = 0.32
 #Rolling resitance is apparently 30 times drag force
 RR_FORCE = 9.6
 
+GRAVITY = 9.81
 
 
 #WALL OF TEXT

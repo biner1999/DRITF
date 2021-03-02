@@ -6,7 +6,8 @@ import esper
 import components as com
 import processes as pro
 import functions as fun
-
+import numpy as np
+from scipy import interpolate
 
 from pygame.locals import *
 from pygame.joystick import *
@@ -26,12 +27,26 @@ screen = pygame.display.set_mode(win_res,0,32)
 
 world = esper.World()
 
+def torque_calc():
+    rpm = [700, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500]
+    torque = [94, 108 ,122, 148, 176, 179, 167, 156, 174, 180, 177, 177, 172, 163, 133]
+
+    yinterp = interpolate.interp1d(rpm, torque, kind="cubic")
+    xnew = np.arange(700, 7500, 1)
+    ynew = yinterp(xnew)
+    return ynew
+
+torque_curve = torque_calc()
 
 car = world.create_entity()
 world.add_component(car, com.Position(initV=([50, 50])))
 world.add_component(car, com.Velocity(initV=([0, 0])))
 world.add_component(car, com.Chassis(wheelbase=2.57, cg_front_axle=1.208, cg_rear_axle=1.362, cg_height=0.46, mass=1222, inertia=1222, length=4.24, width=1.775, wheel_diameter=0.5285, wheel_width=0.15))
+world.add_component(car, com.Engine(torque_curve=torque_curve, idle=700, rev_limit=7500, rpm=2000))
+world.add_component(car, com.GearBox(4.100, 3.437, 3.626, 2.188, 1.541, 1.213, 1.000, 0.767))
 world.add_component(car, com.DeltaTime(dt=0))
+world.add_component(car, com.ForwardForce(forward_force=0))
+
 img = pygame.image.load("assets/car_black_5.png")
 world.add_component(car, com.Sprite(sprite=img))
 world.add_component(car, com.Steering(angle=0))
@@ -42,7 +57,8 @@ world.add_processor(pro.CarAccelerationProcessor(), priority=4)
 world.add_processor(pro.CarVelocityProcessor(), priority=3)
 world.add_processor(pro.CarPositionProcessor(), priority=2)
 world.add_processor(pro.WeightTransferProcessor())
-
+world.add_processor(pro.EngineForceProcessor(), priority=5)
+world.add_processor(pro.RPMProcessor())
 #world.add_processor(pro.SteeringProcessor())
 world.add_processor(pro.RenderProcessor(renderer=screen), priority=1)
 
@@ -56,7 +72,7 @@ def gameLoop():
     pos = 0
 
     while running:
-        print(world.component_for_entity(car, com.Chassis).weight_front_dynamic+world.component_for_entity(car, com.Chassis).weight_rear_dynamic )
+        print(world.component_for_entity(car, com.Engine).rpm)
         # Input
         for event in pygame.event.get():
             if event.type == pygame.QUIT:

@@ -1,9 +1,6 @@
 import pygame
 from pygame.math import *
 
-
-def bing(v):
-    return v.magnitude()
 class DeltaTime:
     def __init__(self, dt):
         self.dt = dt
@@ -44,6 +41,18 @@ class Chassis:
         self.weight_rear_dynamic = self.weight_rear_standstill
 
 
+class Engine:
+    def __init__(self, torque_curve, idle, rev_limit, rpm):
+        self.torque_curve = torque_curve
+        self.idle = idle
+        self.rev_limit = rev_limit
+        self.rpm = rpm
+
+class ForwardForce:
+    def __init__(self, forward_force):
+        self.forward_force = forward_force
+
+
 class Sprite:
     def __init__(self, sprite):
         self.sprite = sprite
@@ -53,34 +62,12 @@ class Steering:
     def __init__(self, angle):
         self.angle = angle
 
-class GearRatios:
+class GearBox:
     def __init__(self, rear_diff, reverse, first, second, third, fourth, fifth, sixth):
         self.rear_diff = rear_diff
-        self.reverse = reverse
-        self.first = first
-        self.second = second
-        self.third = third
-        self.fourth = fourth
-        self.fifth = fifth
-        self.sixth = sixth
-
-
-class TopSpeed:
-    def __init__(self, reverse, first, second, third, fourth, fifth, sixth):
-        self.reverse = reverse
-        self.first = first
-        self.second = second
-        self.third = third
-        self.fourth = fourth
-        self.fifth = fifth
-        self.sixth = sixth
-
+        self.gear_ratios = [reverse, 0, first, second, third, fourth, fifth, sixth]
+        self.current_gear = 0
 
 class Wheel:
     def __init__(self, diameter):
         self.dimaterer = diameter
-
-
-class GearBox:
-    def __init__(self, current_gear):
-        self.current_gear = current_gear
