@@ -15,6 +15,9 @@ RR_FORCE = 9.6
 
 GRAVITY = 9.81
 
+RADS_to_RPM = 60/(2*3.14) 
+RPM_to_RADS = (2*3.14)/60
+
 
 #WALL OF TEXT
 #Total force = tractive force - drag - roll res

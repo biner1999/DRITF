@@ -42,16 +42,29 @@ class Chassis:
 
 
 class Engine:
-    def __init__(self, torque_curve, idle, rev_limit, rpm):
+    def __init__(self, torque_curve, idle, rev_limit, rpm, throttle):
         self.torque_curve = torque_curve
         self.idle = idle
         self.rev_limit = rev_limit
         self.rpm = rpm
+        self.throttle = throttle
+
+class GearBox:
+    def __init__(self, rear_diff, reverse, first, second, third, fourth, fifth, sixth, clutch_rpm):
+        self.rear_diff = rear_diff
+        self.gear_ratios = [reverse, 0, first, second, third, fourth, fifth, sixth]
+        self.current_gear = 1
+        self.no_of_gears = len(self.gear_ratios)
+        self.clutch = False
+        self.clutch_rpm = clutch_rpm
 
 class ForwardForce:
     def __init__(self, forward_force):
         self.forward_force = forward_force
 
+class Angular:
+    def __init(self, ang_vel):
+        self.ang_vel = ang_vel
 
 class Sprite:
     def __init__(self, sprite):
@@ -62,12 +75,3 @@ class Steering:
     def __init__(self, angle):
         self.angle = angle
 
-class GearBox:
-    def __init__(self, rear_diff, reverse, first, second, third, fourth, fifth, sixth):
-        self.rear_diff = rear_diff
-        self.gear_ratios = [reverse, 0, first, second, third, fourth, fifth, sixth]
-        self.current_gear = 0
-
-class Wheel:
-    def __init__(self, diameter):
-        self.dimaterer = diameter

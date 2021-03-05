@@ -42,23 +42,26 @@ car = world.create_entity()
 world.add_component(car, com.Position(initV=([50, 50])))
 world.add_component(car, com.Velocity(initV=([0, 0])))
 world.add_component(car, com.Chassis(wheelbase=2.57, cg_front_axle=1.208, cg_rear_axle=1.362, cg_height=0.46, mass=1222, inertia=1222, length=4.24, width=1.775, wheel_diameter=0.5285, wheel_width=0.15))
-world.add_component(car, com.Engine(torque_curve=torque_curve, idle=700, rev_limit=7500, rpm=2000))
-world.add_component(car, com.GearBox(4.100, 3.437, 3.626, 2.188, 1.541, 1.213, 1.000, 0.767))
+world.add_component(car, com.Engine(torque_curve=torque_curve, idle=700, rev_limit=7499, rpm=2000, throttle = 0))
+world.add_component(car, com.GearBox(4.100, 3.437, 3.626, 2.188, 1.541, 1.213, 1.000, 0.767, clutch_rpm=0))
 world.add_component(car, com.DeltaTime(dt=0))
 world.add_component(car, com.ForwardForce(forward_force=0))
+world.add_component(car, com.Angular(ang_vel=0))
 
 img = pygame.image.load("assets/car_black_5.png")
 world.add_component(car, com.Sprite(sprite=img))
 world.add_component(car, com.Steering(angle=0))
 world.add_component(car, com.Direction(initV=([0,1])))
 world.add_component(car, com.Acceleration(initV=[0, 0]))
-world.add_component(car, com.Wheel(diameter=25))
 world.add_processor(pro.CarAccelerationProcessor(), priority=4)
 world.add_processor(pro.CarVelocityProcessor(), priority=3)
 world.add_processor(pro.CarPositionProcessor(), priority=2)
 world.add_processor(pro.WeightTransferProcessor())
-world.add_processor(pro.EngineForceProcessor(), priority=5)
+world.add_processor(pro.DriveForceProcessor(), priority=5)
 world.add_processor(pro.RPMProcessor())
+world.add_processor(pro.ClutchProcessor())
+world.add_processor(pro.AngluarProcessor())
+
 #world.add_processor(pro.SteeringProcessor())
 world.add_processor(pro.RenderProcessor(renderer=screen), priority=1)
 
@@ -72,7 +75,9 @@ def gameLoop():
     pos = 0
 
     while running:
-        print(world.component_for_entity(car, com.Engine).rpm)
+        #print(world.component_for_entity(car, com.GearBox).clutch_rpm)
+        #print(world.component_for_entity(car, com.Engine).rpm)
+        print(world.component_for_entity(car, com.Velocity).velV.magnitude())
         # Input
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -82,22 +87,31 @@ def gameLoop():
                     pass
             if event.type == pygame.JOYBUTTONDOWN:
                 #Gear down
-                print(pygame.joystick.Joystick(0).get_button(4))
+                if pygame.joystick.Joystick(0).get_button(4):
+                    if world.component_for_entity(car, com.GearBox).current_gear > 0:
+                        world.component_for_entity(car, com.GearBox).current_gear -= 1
+                        print(world.component_for_entity(car, com.GearBox).current_gear)
+
                 #Gear up
-                print(pygame.joystick.Joystick(0).get_button(5))
+                if pygame.joystick.Joystick(0).get_button(5):
+                    if world.component_for_entity(car, com.GearBox).current_gear < world.component_for_entity(car, com.GearBox).no_of_gears-1:
+                        world.component_for_entity(car, com.GearBox).current_gear += 1
+                        print(world.component_for_entity(car, com.GearBox).current_gear)
                 #Clutch
-                print(pygame.joystick.Joystick(0).get_button(0))
+                if pygame.joystick.Joystick(0).get_button(0) == True:
+                    world.component_for_entity(car, com.GearBox).clutch = True
                 #Handbreak
-                print(pygame.joystick.Joystick(0).get_button(1))
+                #print(pygame.joystick.Joystick(0).get_button(1))
             if event.type == pygame.JOYBUTTONUP:
                 #Gear down
-                print(pygame.joystick.Joystick(0).get_button(4))
+                #print(pygame.joystick.Joystick(0).get_button(4))
                 #Gear up
-                print(pygame.joystick.Joystick(0).get_button(5))
+                #print(pygame.joystick.Joystick(0).get_button(5))
                 #Clutch
-                print(pygame.joystick.Joystick(0).get_button(0))
+                if pygame.joystick.Joystick(0).get_button(0) == False:
+                    world.component_for_entity(car, com.GearBox).clutch = False
                 #Handbreak
-                print(pygame.joystick.Joystick(0).get_button(1))
+                #print(pygame.joystick.Joystick(0).get_button(1))
             if event.type == pygame.JOYAXISMOTION:
                 #UP and LEFT is negative
                 #Steering
@@ -111,7 +125,10 @@ def gameLoop():
                 #Throttle
                 #print("RT = " + str(pygame.joystick.Joystick(0).get_axis(5)))
                 if pygame.joystick.Joystick(0).get_axis(5) >= -0.99:
-                    world.component_for_entity(car, com.Velocity).vel = (pygame.joystick.Joystick(0).get_axis(5) - constants.OLD_ZAXIS_MIN) * constants.RANGE_RATIO
+                    world.component_for_entity(car, com.Engine).throttle = (pygame.joystick.Joystick(0).get_axis(5) - constants.OLD_ZAXIS_MIN) * constants.RANGE_RATIO
+                if pygame.joystick.Joystick(0).get_axis(5) < -0.99:
+                    world.component_for_entity(car, com.Engine).throttle = 0
+
                 #Goes from -1.0 to 1.0
                 #Break
                 #print("LT = " + str(pygame.joystick.Joystick(0).get_axis(4)))
