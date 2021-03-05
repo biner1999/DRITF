@@ -46,8 +46,6 @@ world.add_component(car, com.Engine(torque_curve=torque_curve, idle=700, rev_lim
 world.add_component(car, com.GearBox(4.100, 3.437, 3.626, 2.188, 1.541, 1.213, 1.000, 0.767, clutch_rpm=0))
 world.add_component(car, com.DeltaTime(dt=0))
 world.add_component(car, com.ForwardForce(forward_force=0))
-world.add_component(car, com.Angular(ang_vel=0))
-
 img = pygame.image.load("assets/car_black_5.png")
 world.add_component(car, com.Sprite(sprite=img))
 world.add_component(car, com.Steering(angle=0))
@@ -60,7 +58,7 @@ world.add_processor(pro.WeightTransferProcessor())
 world.add_processor(pro.DriveForceProcessor(), priority=5)
 world.add_processor(pro.RPMProcessor())
 world.add_processor(pro.ClutchProcessor())
-world.add_processor(pro.AngluarProcessor())
+#world.add_processor(pro.AngluarProcessor())
 
 #world.add_processor(pro.SteeringProcessor())
 world.add_processor(pro.RenderProcessor(renderer=screen), priority=1)
@@ -77,7 +75,7 @@ def gameLoop():
     while running:
         #print(world.component_for_entity(car, com.GearBox).clutch_rpm)
         #print(world.component_for_entity(car, com.Engine).rpm)
-        print(world.component_for_entity(car, com.Velocity).velV.magnitude())
+        #print(world.component_for_entity(car, com.Velocity).velV.magnitude())
         # Input
         for event in pygame.event.get():
             if event.type == pygame.QUIT:

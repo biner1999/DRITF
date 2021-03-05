@@ -32,27 +32,46 @@ class DriveForceProcessor(esper.Processor):
 
     def process(self):
         for ent, (cha, eng, grb, ff) in self.world.get_components(com.Chassis, com.Engine, com.GearBox, com.ForwardForce):
+            pass
             #ff.forward_force = (eng.torque_curve[3000] * grb.current_gear * grb.rear_diff) * cha.wheel_diameter/2 * throttle
             #ff.forward_force = (eng.current_torque * throttle * grb.current_gear * grb.rear_diff) * (cha.wheel_diameter/2)
             #ff.forward_force = (eng.torque_curve[700-700] * 3.6 * grb.rear_diff) * cha.wheel_diameter/2 * 1
-            ff.forward_force = (eng.torque_curve[eng.rpm-eng.idle] * eng.throttle * grb.rear_diff * grb.gear_ratios[grb.current_gear])/(cha.wheel_diameter/2)
+            #ff.forward_force = (eng.torque_curve[eng.rpm-eng.idle] * eng.throttle * grb.rear_diff * grb.gear_ratios[grb.current_gear])/(cha.wheel_diameter/2)
 
 
 class RPMProcessor(esper.Processor):
     def process(self):
-        for ent, (eng, grb, cha, velo) in self.world.get_components(com.Engine, com.GearBox, com.Chassis, com.Velocity):
-            eng.rpm = int((velo.velV.magnitude()/(cha.wheel_diameter/2)) * grb.rear_diff * grb.gear_ratios[grb.current_gear] * constants.RADS_to_RPM)
-            if eng.rpm < eng.idle:
-                eng.rpm = eng.idle
-            if eng.rpm > eng.rev_limit:
-                eng.rpm = eng.rev_limit
+        for ent, (eng, grb, cha, velo, dt) in self.world.get_components(com.Engine, com.GearBox, com.Chassis, com.Velocity, com.DeltaTime):
+            if grb.gear_ratios[grb.current_gear] == 0 or grb.clutch == True:
+                eng_ang_vel = eng.rpm * constants.RPM_to_RADS
+                eng_ang_acc = ((eng.torque_curve[eng.rpm-eng.idle] * eng.throttle) - (eng.rpm - eng.idle + 1)/60 ) / 0.5
+                eng_ang_vel += eng_ang_acc * dt.dt
+                temp_rpm = int(round(eng_ang_vel * constants.RADS_to_RPM))
+                if temp_rpm < eng.idle:
+                    eng.rpm = eng.idle
+                elif temp_rpm > eng.rev_limit:
+                    eng.rpm = eng.rev_limit
+                else:
+                    eng.rpm = temp_rpm
+                print(eng.rpm)
+
                 
-class AngluarProcessor(esper.Processor):
-    def process(self):
-        for ent, (eng, grb, cha, dt) in self.world.get_components(com.Engine, com.GearBox, com.Chassis, com.DeltaTime):
-            inertia = 2 * 15 * (cha.wheel_diameter/2)**2
-            ang_acc = (eng.torque_curve[eng.rpm-eng.idle] * eng.throttle * grb.rear_diff * grb.gear_ratios[grb.current_gear]) / inertia
-            ang_vel += ang_acc * dt.dt
+
+
+
+
+            #eng.rpm = int((velo.velV.magnitude()/(cha.wheel_diameter/2)) * grb.rear_diff * grb.gear_ratios[grb.current_gear] * constants.RADS_to_RPM)
+            #if eng.rpm < eng.idle:
+            #    eng.rpm = eng.idle
+            #if eng.rpm > eng.rev_limit:
+            #    eng.rpm = eng.rev_limit
+                
+#class AngluarProcessor(esper.Processor):
+ #   def process(self):
+  #      for ent, (eng, grb, cha, dt) in self.world.get_components(com.Engine, com.GearBox, com.Chassis, com.DeltaTime):
+   #         inertia = 2 * 15 * (cha.wheel_diameter/2)**2
+    #        ang_acc = (eng.torque_curve[eng.rpm-eng.idle] * eng.throttle * grb.rear_diff * grb.gear_ratios[grb.current_gear]) / inertia
+     #       ang_vel += ang_acc * dt.dt
 
 
 """

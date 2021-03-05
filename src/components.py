@@ -62,9 +62,6 @@ class ForwardForce:
     def __init__(self, forward_force):
         self.forward_force = forward_force
 
-class Angular:
-    def __init(self, ang_vel):
-        self.ang_vel = ang_vel
 
 class Sprite:
     def __init__(self, sprite):
