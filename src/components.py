@@ -39,7 +39,12 @@ class Chassis:
         self.weight_rear_standstill = cg_front_axle/wheelbase*mass
         self.weight_front_dynamic = self.weight_front_standstill
         self.weight_rear_dynamic = self.weight_rear_standstill
+        self.drive_torque = 0
 
+class Temp:
+    def __init__(self, v, t):
+        self.v = v
+        self.throttle = t
 
 class Engine:
     def __init__(self, torque_curve, idle, rev_limit, rpm, throttle):
@@ -62,6 +67,10 @@ class ForwardForce:
     def __init__(self, forward_force):
         self.forward_force = forward_force
 
+
+class AngVel:
+    def __init__(self, ang_vel):
+        self.ang_vel = ang_vel
 
 class Sprite:
     def __init__(self, sprite):

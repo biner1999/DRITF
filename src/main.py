@@ -43,7 +43,7 @@ world.add_component(car, com.Position(initV=([50, 50])))
 world.add_component(car, com.Velocity(initV=([0, 0])))
 world.add_component(car, com.Chassis(wheelbase=2.57, cg_front_axle=1.208, cg_rear_axle=1.362, cg_height=0.46, mass=1222, inertia=1222, length=4.24, width=1.775, wheel_diameter=0.5285, wheel_width=0.15))
 world.add_component(car, com.Engine(torque_curve=torque_curve, idle=700, rev_limit=7499, rpm=2000, throttle = 0))
-world.add_component(car, com.GearBox(4.100, 3.437, 3.626, 2.188, 1.541, 1.213, 1.000, 0.767, clutch_rpm=0))
+world.add_component(car, com.GearBox(4.100, -3.437, 3.626, 2.188, 1.541, 1.213, 1.000, 0.767, clutch_rpm=0))
 world.add_component(car, com.DeltaTime(dt=0))
 world.add_component(car, com.ForwardForce(forward_force=0))
 img = pygame.image.load("assets/car_black_5.png")
@@ -51,12 +51,14 @@ world.add_component(car, com.Sprite(sprite=img))
 world.add_component(car, com.Steering(angle=0))
 world.add_component(car, com.Direction(initV=([0,1])))
 world.add_component(car, com.Acceleration(initV=[0, 0]))
-world.add_processor(pro.CarAccelerationProcessor(), priority=4)
-world.add_processor(pro.CarVelocityProcessor(), priority=3)
-world.add_processor(pro.CarPositionProcessor(), priority=2)
+#world.add_component(car, com.Temp(v=0,t=0))
+#world.add_processor(pro.BigProcessor())
+world.add_processor(pro.CarAccelerationProcessor())
+world.add_processor(pro.CarVelocityProcessor())
+world.add_processor(pro.CarPositionProcessor())
 world.add_processor(pro.WeightTransferProcessor())
-world.add_processor(pro.DriveForceProcessor(), priority=5)
-world.add_processor(pro.RPMProcessor())
+world.add_processor(pro.DriveForceProcessor())
+world.add_processor(pro.RPMProcessor(), priority=1)
 world.add_processor(pro.ClutchProcessor())
 #world.add_processor(pro.AngluarProcessor())
 
@@ -73,9 +75,8 @@ def gameLoop():
     pos = 0
 
     while running:
-        #print(world.component_for_entity(car, com.GearBox).clutch_rpm)
-        #print(world.component_for_entity(car, com.Engine).rpm)
-        #print(world.component_for_entity(car, com.Velocity).velV.magnitude())
+        print(world.component_for_entity(car, com.ForwardForce).forward_force)
+        #print(world.component_for_entity(car, com.Velocity).velV.magnitude()*3.6)
         # Input
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -113,6 +114,7 @@ def gameLoop():
             if event.type == pygame.JOYAXISMOTION:
                 #UP and LEFT is negative
                 #Steering
+
                 if pygame.joystick.Joystick(0).get_axis(0) < -0.2:
                     world.component_for_entity(car, com.Steering).angle = (pygame.joystick.Joystick(0).get_axis(0)*1.25 + 0.25)*-35
                 elif pygame.joystick.Joystick(0).get_axis(0) > 0.2:
@@ -137,6 +139,7 @@ def gameLoop():
         last_time = time.time()
         dt = dt * constants.TARGET_FRAMERATE
         world.component_for_entity(car, com.DeltaTime).dt = dt
+        
         # Background color
         screen.fill((255, 255, 255))
         # Update the game
