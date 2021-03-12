@@ -13,18 +13,25 @@ class Velocity:
     def __init__(self, initV):
         self.velV = pygame.math.Vector2(initV)
 
+class CarAcceleration:
+    def __init__(self, initV):
+        self.accV = pygame.math.Vector2(initV)
+
+class CarVelocity:
+    def __init__(self, initV):
+        self.velV = pygame.math.Vector2(initV)
+
 class Position:
     def __init__(self, initV):
         self.posV = pygame.Vector2(initV)
 
 
 class Direction:
-    def __init__(self, initV):
+    def __init__(self, initV, angle):
         self.dirV = pygame.math.Vector2(initV).normalize()
 
-
 class Chassis:
-    def __init__(self, wheelbase, cg_front_axle, cg_rear_axle, cg_height, mass, inertia, length, width, wheel_diameter, wheel_width):
+    def __init__(self, wheelbase, cg_front_axle, cg_rear_axle, cg_height, mass, inertia, length, width, wheel_diameter, wheel_width, brake, brake_power):
         self.wheelbase = wheelbase
         self.cg_front_axle = cg_front_axle
         self.cg_rear_axle = cg_rear_axle
@@ -34,12 +41,15 @@ class Chassis:
         self.length = length
         self.width = width
         self.wheel_diameter = wheel_diameter
+        self.wheel_radius = self.wheel_diameter/2
         self.wheel_width = wheel_width
         self.weight_front_standstill = cg_rear_axle/wheelbase*mass
         self.weight_rear_standstill = cg_front_axle/wheelbase*mass
         self.weight_front_dynamic = self.weight_front_standstill
         self.weight_rear_dynamic = self.weight_rear_standstill
         self.drive_torque = 0
+        self.brake = brake
+        self.brake_power = brake_power
 
 class Temp:
     def __init__(self, v, t):
@@ -49,6 +59,7 @@ class Temp:
 class Engine:
     def __init__(self, torque_curve, idle, rev_limit, rpm, throttle):
         self.torque_curve = torque_curve
+        self.torque = 0
         self.idle = idle
         self.rev_limit = rev_limit
         self.rpm = rpm
@@ -66,7 +77,7 @@ class GearBox:
 class ForwardForce:
     def __init__(self, forward_force):
         self.forward_force = forward_force
-
+        
 
 class AngVel:
     def __init__(self, ang_vel):
@@ -80,4 +91,9 @@ class Sprite:
 class Steering:
     def __init__(self, angle):
         self.angle = angle
+        self.sn = 0
+        self.cs = 0
+        self.fff = 0
+        self.ffr = 0
+        self.yawRate = 0
 

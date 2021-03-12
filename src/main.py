@@ -9,12 +9,15 @@ import functions as fun
 import numpy as np
 from scipy import interpolate
 
+
 from pygame.locals import *
 from pygame.joystick import *
 import constants
 # Intializations of PyGame and Joystick module
 pygame.init()
-
+pygame.font.init() # you have to call this at the start, 
+                   # if you want to use this module.
+myfont = pygame.font.SysFont('Comic Sans MS', 30)
 
 pygame.joystick.Joystick(0).init()
 joysticks = [pygame.joystick.Joystick(x) 
@@ -38,31 +41,32 @@ def torque_calc():
 
 torque_curve = torque_calc()
 
+# Car components
 car = world.create_entity()
 world.add_component(car, com.Position(initV=([50, 50])))
 world.add_component(car, com.Velocity(initV=([0, 0])))
-world.add_component(car, com.Chassis(wheelbase=2.57, cg_front_axle=1.208, cg_rear_axle=1.362, cg_height=0.46, mass=1222, inertia=1222, length=4.24, width=1.775, wheel_diameter=0.5285, wheel_width=0.15))
+world.add_component(car, com.Chassis(wheelbase=2.57, cg_front_axle=1.208, cg_rear_axle=1.362, cg_height=0.46, mass=1222, inertia=1222, length=4.24, width=1.775, wheel_diameter=0.5285, wheel_width=0.15, brake=0, brake_power=12000))
 world.add_component(car, com.Engine(torque_curve=torque_curve, idle=700, rev_limit=7499, rpm=2000, throttle = 0))
-world.add_component(car, com.GearBox(4.100, -3.437, 3.626, 2.188, 1.541, 1.213, 1.000, 0.767, clutch_rpm=0))
+world.add_component(car, com.GearBox(4.100, -3.437, 8.626, 2.188, 1.541, 1.213, 1.000, 0.767, clutch_rpm=0))
 world.add_component(car, com.DeltaTime(dt=0))
 world.add_component(car, com.ForwardForce(forward_force=0))
 img = pygame.image.load("assets/car_black_5.png")
 world.add_component(car, com.Sprite(sprite=img))
 world.add_component(car, com.Steering(angle=0))
-world.add_component(car, com.Direction(initV=([0,1])))
+world.add_component(car, com.Direction(initV=([0,1]), angle=0))
 world.add_component(car, com.Acceleration(initV=[0, 0]))
-#world.add_component(car, com.Temp(v=0,t=0))
-#world.add_processor(pro.BigProcessor())
-world.add_processor(pro.CarAccelerationProcessor())
-world.add_processor(pro.CarVelocityProcessor())
-world.add_processor(pro.CarPositionProcessor())
-world.add_processor(pro.WeightTransferProcessor())
-world.add_processor(pro.DriveForceProcessor())
-world.add_processor(pro.RPMProcessor(), priority=1)
-world.add_processor(pro.ClutchProcessor())
-#world.add_processor(pro.AngluarProcessor())
+world.add_component(car, com.Temp(v=0,t=0))
+world.add_component(car, com.CarAcceleration(initV=([0,0])))
+world.add_component(car, com.CarVelocity(initV=([0,0])))
 
-#world.add_processor(pro.SteeringProcessor())
+# Processors
+world.add_processor(pro.RPMTorqueProcessor())
+world.add_processor(pro.FForceProcessor())
+world.add_processor(pro.AccelerationProcessor())
+world.add_processor(pro.VelocityProcessor())
+world.add_processor(pro.PositionProcessor())
+
+world.add_processor(pro.SteeringProcessor())
 world.add_processor(pro.RenderProcessor(renderer=screen), priority=1)
 
 def gameLoop():
@@ -75,7 +79,7 @@ def gameLoop():
     pos = 0
 
     while running:
-        print(world.component_for_entity(car, com.ForwardForce).forward_force)
+        #print(world.component_for_entity(car, com.ForwardForce).forward_force)
         #print(world.component_for_entity(car, com.Velocity).velV.magnitude()*3.6)
         # Input
         for event in pygame.event.get():
@@ -100,7 +104,7 @@ def gameLoop():
                 if pygame.joystick.Joystick(0).get_button(0) == True:
                     world.component_for_entity(car, com.GearBox).clutch = True
                 #Handbreak
-                #print(pygame.joystick.Joystick(0).get_button(1))
+                #print(pygamVelocitye.joystick.Joystick(0).get_button(1))
             if event.type == pygame.JOYBUTTONUP:
                 #Gear down
                 #print(pygame.joystick.Joystick(0).get_button(4))
@@ -131,7 +135,11 @@ def gameLoop():
 
                 #Goes from -1.0 to 1.0
                 #Break
-                #print("LT = " + str(pygame.joystick.Joystick(0).get_axis(4)))
+                #print("LT = " + str(pygame.joystick.Joystick(0).get_axis(2)))
+                if pygame.joystick.Joystick(0).get_axis(2) >= -0.99:
+                    world.component_for_entity(car, com.Chassis).brake = (pygame.joystick.Joystick(0).get_axis(2) - constants.OLD_ZAXIS_MIN) * constants.RANGE_RATIO
+                if pygame.joystick.Joystick(0).get_axis(2) < -0.99:
+                    world.component_for_entity(car, com.Chassis).brake = 0
         
         # Delta time to make sure everything runs as if its always 60 FPS
 
@@ -144,7 +152,13 @@ def gameLoop():
         screen.fill((255, 255, 255))
         # Update the game
         world.process()
+        textsurface = myfont.render("RPM: " + str(int(world.component_for_entity(car, com.Engine).rpm)), False, (0, 0, 0))
+        textsurface2 = myfont.render("Speed: " + str(int(world.component_for_entity(car, com.CarVelocity).velV.magnitude())), False, (0, 0, 0))
+        textsurface3 = myfont.render("Gear: " + str(int(world.component_for_entity(car, com.GearBox).current_gear)), False, (0, 0, 0))
 
+        screen.blit(textsurface,(0,0))
+        screen.blit(textsurface3,(0,50))
+        screen.blit(textsurface2,(0,100))
 
         # Test circle
         #pygame.draw.circle(screen, (0, 0, 255), (pos, 250), 75)

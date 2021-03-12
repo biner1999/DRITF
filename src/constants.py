@@ -11,7 +11,7 @@ RANGE_RATIO = 0.5
 #Drag force without speed^2 (drag coeff)= 0.5 * 0.27 * 1.85 * 1.29
 DRAG_COEFF = 0.32
 #Rolling resitance is apparently 30 times drag force
-RR_FORCE = 9.6
+RR_COEFF = 9.6
 
 GRAVITY = 9.81
 
