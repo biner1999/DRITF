@@ -43,30 +43,34 @@ torque_curve = torque_calc()
 
 # Car components
 car = world.create_entity()
+world.add_component(car, com.DeltaTime())
+
+img = pygame.image.load("assets/car_black_5.png")
+world.add_component(car, com.Sprite(sprite=img))
+
 world.add_component(car, com.Position(initV=([50, 50])))
-world.add_component(car, com.Velocity(initV=([0, 0])))
+world.add_component(car, com.Velocity())
+world.add_component(car, com.Acceleration())
+world.add_component(car, com.CarAcceleration())
+world.add_component(car, com.CarVelocity())
+world.add_component(car, com.Direction(initV=([0,1]), angle=0))
+
 world.add_component(car, com.Chassis(wheelbase=2.57, cg_front_axle=1.208, cg_rear_axle=1.362, cg_height=0.46, mass=1222, inertia=1222, length=4.24, width=1.775, wheel_diameter=0.5285, wheel_width=0.15, brake=0, brake_power=12000))
 world.add_component(car, com.Engine(torque_curve=torque_curve, idle=700, rev_limit=7499, rpm=2000, throttle = 0))
 world.add_component(car, com.GearBox(4.100, -3.437, 8.626, 2.188, 1.541, 1.213, 1.000, 0.767, clutch_rpm=0))
-world.add_component(car, com.DeltaTime(dt=0))
-world.add_component(car, com.ForwardForce(forward_force=0))
-img = pygame.image.load("assets/car_black_5.png")
-world.add_component(car, com.Sprite(sprite=img))
+world.add_component(car, com.ForwardForce())
 world.add_component(car, com.Steering(angle=0))
-world.add_component(car, com.Direction(initV=([0,1]), angle=0))
-world.add_component(car, com.Acceleration(initV=[0, 0]))
-world.add_component(car, com.Temp(v=0,t=0))
-world.add_component(car, com.CarAcceleration(initV=([0,0])))
-world.add_component(car, com.CarVelocity(initV=([0,0])))
 
 # Processors
-world.add_processor(pro.RPMTorqueProcessor())
-world.add_processor(pro.FForceProcessor())
-world.add_processor(pro.AccelerationProcessor())
-world.add_processor(pro.VelocityProcessor())
-world.add_processor(pro.PositionProcessor())
+world.add_processor(pro.TestProcessor())
 
-world.add_processor(pro.SteeringProcessor())
+#world.add_processor(pro.RPMTorqueProcessor())
+#world.add_processor(pro.FForceProcessor())
+#world.add_processor(pro.AccelerationProcessor())
+#world.add_processor(pro.VelocityProcessor())
+#world.add_processor(pro.PositionProcessor())
+
+#world.add_processor(pro.SteeringProcessor())
 world.add_processor(pro.RenderProcessor(renderer=screen), priority=1)
 
 def gameLoop():
@@ -120,11 +124,11 @@ def gameLoop():
                 #Steering
 
                 if pygame.joystick.Joystick(0).get_axis(0) < -0.2:
-                    world.component_for_entity(car, com.Steering).angle = (pygame.joystick.Joystick(0).get_axis(0)*1.25 + 0.25)*-35
+                    world.component_for_entity(car, com.Steering).steer_angle = (pygame.joystick.Joystick(0).get_axis(0)*1.25 + 0.25)*-35
                 elif pygame.joystick.Joystick(0).get_axis(0) > 0.2:
-                    world.component_for_entity(car, com.Steering).angle = (pygame.joystick.Joystick(0).get_axis(0)*1.25 - 0.25)*-35
+                    world.component_for_entity(car, com.Steering).steer_angle = (pygame.joystick.Joystick(0).get_axis(0)*1.25 - 0.25)*-35
                 else:
-                    world.component_for_entity(car, com.Steering).angle = 0
+                    world.component_for_entity(car, com.Steering).steer_angle = 0
 
                 #Throttle
                 #print("RT = " + str(pygame.joystick.Joystick(0).get_axis(5)))

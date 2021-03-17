@@ -2,29 +2,32 @@ import pygame
 from pygame.math import *
 
 class DeltaTime:
-    def __init__(self, dt):
-        self.dt = dt
+    def __init__(self):
+        self.dt = 0
+
+class Sprite:
+    def __init__(self, sprite):
+        self.sprite = sprite
 
 class Acceleration:
-    def __init__(self, initV):
-        self.accV = pygame.Vector2(initV)
+    def __init__(self):
+        self.accV = pygame.Vector2([0, 0])
 
 class Velocity:
-    def __init__(self, initV):
-        self.velV = pygame.math.Vector2(initV)
+    def __init__(self):
+        self.velV = pygame.math.Vector2([0, 0])
 
 class CarAcceleration:
-    def __init__(self, initV):
-        self.accV = pygame.math.Vector2(initV)
+    def __init__(self):
+        self.accV = pygame.math.Vector2([0,0])
 
 class CarVelocity:
-    def __init__(self, initV):
-        self.velV = pygame.math.Vector2(initV)
+    def __init__(self):
+        self.velV = pygame.math.Vector2([0,0])
 
 class Position:
     def __init__(self, initV):
         self.posV = pygame.Vector2(initV)
-
 
 class Direction:
     def __init__(self, initV, angle):
@@ -51,11 +54,6 @@ class Chassis:
         self.brake = brake
         self.brake_power = brake_power
 
-class Temp:
-    def __init__(self, v, t):
-        self.v = v
-        self.throttle = t
-
 class Engine:
     def __init__(self, torque_curve, idle, rev_limit, rpm, throttle):
         self.torque_curve = torque_curve
@@ -75,22 +73,14 @@ class GearBox:
         self.clutch_rpm = clutch_rpm
 
 class ForwardForce:
-    def __init__(self, forward_force):
-        self.forward_force = forward_force
-        
-
-class AngVel:
-    def __init__(self, ang_vel):
-        self.ang_vel = ang_vel
-
-class Sprite:
-    def __init__(self, sprite):
-        self.sprite = sprite
-
+    def __init__(self):
+        self.forward_force = 0
+        self.sideway_force = 0
 
 class Steering:
     def __init__(self, angle):
-        self.angle = angle
+        self.heading = 0
+        self.steer_angle = 0
         self.sn = 0
         self.cs = 0
         self.fff = 0
