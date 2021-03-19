@@ -16,23 +16,24 @@ class TestProcessor(esper.Processor):
             sn = math.sin(ster.heading)
             cs = math.cos(ster.heading)
 
-            local_vx = cs * velo.velV.x + sn * velo.velV.y
-            local_vy = cs * velo.velV.y - sn * velo.velV.x
+            cvelo.velV.x = cs * velo.velV.y + sn * velo.velV.x
+            cvelo.velV.y = cs * velo.velV.x - sn * velo.velV.y
 
             faw = cha.weight_front_standstill * constants.GRAVITY
             raw = cha.weight_rear_standstill * constants.GRAVITY
 
+            #yawRate is wrong
             yawSpeedFront = cha.cg_front_axle * ster.yawRate
             yawSpeedRear = -cha.cg_rear_axle * ster.yawRate
 
-            slipAngleFront = math.atan2(local_vy + yawSpeedFront, abs(local_vx)) - np.sign(local_vx) * str_ang
-            slipAngleRear  = math.atan2(local_vy + yawSpeedRear,  abs(local_vx))
+            slipAngleFront = math.atan2(cvelo.velV.y + yawSpeedFront, abs(cvelo.velV.x)) - np.sign(cvelo.velV.x) * str_ang
+            slipAngleRear  = math.atan2(cvelo.velV.y + yawSpeedRear,  abs(cvelo.velV.x))
 
             ster.fff = np.clip(-5*slipAngleFront, -2, 2) * faw
-            ster.ffr = np.clip(-5*slipAngleRear, -2, 2) * raw
-            
+            ster.ffr = np.clip(-5.2*slipAngleRear, -2, 2) * raw
+
             # Calculates the engine RPM from speed
-            eng.rpm = (abs(local_vx)/cha.wheel_radius) * (grb.rear_diff * abs(grb.gear_ratios[grb.current_gear])) * constants.RADS_to_RPM
+            eng.rpm = (abs(cvelo.velV.x)/cha.wheel_radius) * (grb.rear_diff * abs(grb.gear_ratios[grb.current_gear])) * constants.RADS_to_RPM
             # Manages the idle RPM
             if eng.rpm < eng.idle:
                 eng.rpm = eng.idle
@@ -51,22 +52,21 @@ class TestProcessor(esper.Processor):
             #print(eng.rpm)
             torque = (eng.throttle * eng.torque) * (grb.rear_diff * grb.gear_ratios[grb.current_gear])
 
-            ff.forward_force = torque / cha.wheel_radius  - cha.brake*cha.brake_power*np.sign(local_vx)
+            ff.forward_force = torque / cha.wheel_radius  - cha.brake*cha.brake_power*np.sign(cvelo.velV.x)
             ff.sideway_force = 0
 
-            drag_force_x = -constants.RR_COEFF * local_vx - constants.DRAG_COEFF * local_vx * abs(local_vx);
-            drag_force_y = -constants.RR_COEFF * local_vy - constants.DRAG_COEFF * local_vy * abs(local_vy);
+            drag_force_x = -constants.RR_COEFF * cvelo.velV.x - constants.DRAG_COEFF * cvelo.velV.x * abs(cvelo.velV.x);
+            drag_force_y = -constants.RR_COEFF * cvelo.velV.y - constants.DRAG_COEFF * cvelo.velV.y * abs(cvelo.velV.y);
 
             total_force_x = ff.forward_force + drag_force_x
             total_force_y = ff.sideway_force + drag_force_y + math.cos(str_ang) * ster.fff + ster.ffr
 
-            
             #print(velo.velV.y)
             local_ax = total_force_x / cha.mass
             local_ay = total_force_y / cha.mass
 
-            accel.accV.x = cs * local_ax - sn * local_ay
-            accel.accV.y = sn * local_ax + cs * local_ay
+            accel.accV.x = cs * local_ay + sn * local_ax
+            accel.accV.y = -sn * local_ay + cs * local_ax
 
             velo.velV.x += accel.accV.x * dt.dt
             velo.velV.y += accel.accV.y * dt.dt
@@ -80,7 +80,7 @@ class TestProcessor(esper.Processor):
                 velo.velV.y = 0
                 velo.velV.x = 0
                 angularTorque = 0
-                yawRate = 0
+                ster.yawRate = 0
 
             angularAccel = angularTorque / cha.inertia
 
@@ -88,6 +88,7 @@ class TestProcessor(esper.Processor):
             if(velo.velV.magnitude() < 1 and str_ang < 0.05):
                 ster.yawRate = 0
             ster.heading += ster.yawRate * dt.dt
+
 class RPMTorqueProcessor(esper.Processor):
 
     def process(self):
@@ -337,8 +338,9 @@ class RenderProcessor(esper.Processor):
 
     def process(self):
         for ent, (spr, pos, stre) in self.world.get_components(com.Sprite, com.Position, com.Steering):
-            rot_spr = pygame.transform.rotate(spr.sprite, stre.heading)
+            rot_spr = pygame.transform.rotate(spr.sprite, math.degrees(stre.heading)-180)
             self.renderer.blit(rot_spr, [pos.posV.x, pos.posV.y])
+
 
 
 

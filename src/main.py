@@ -7,6 +7,7 @@ import components as com
 import processes as pro
 import functions as fun
 import numpy as np
+import math
 from scipy import interpolate
 
 
@@ -43,9 +44,12 @@ torque_curve = torque_calc()
 
 # Car components
 car = world.create_entity()
+
 world.add_component(car, com.DeltaTime())
 
 img = pygame.image.load("assets/car_black_5.png")
+img2 = pygame.image.load("assets/arrow_yellow.png")
+
 world.add_component(car, com.Sprite(sprite=img))
 
 world.add_component(car, com.Position(initV=([50, 50])))
@@ -55,9 +59,9 @@ world.add_component(car, com.CarAcceleration())
 world.add_component(car, com.CarVelocity())
 world.add_component(car, com.Direction(initV=([0,1]), angle=0))
 
-world.add_component(car, com.Chassis(wheelbase=2.57, cg_front_axle=1.208, cg_rear_axle=1.362, cg_height=0.46, mass=1222, inertia=1222, length=4.24, width=1.775, wheel_diameter=0.5285, wheel_width=0.15, brake=0, brake_power=12000))
-world.add_component(car, com.Engine(torque_curve=torque_curve, idle=700, rev_limit=7499, rpm=2000, throttle = 0))
-world.add_component(car, com.GearBox(4.100, -3.437, 8.626, 2.188, 1.541, 1.213, 1.000, 0.767, clutch_rpm=0))
+world.add_component(car, com.Chassis(wheelbase=2.57, cg_front_axle=1.208, cg_rear_axle=1.362, cg_height=0.46, mass=1222, length=4.24, width=1.775, wheel_diameter=0.5285, wheel_width=0.15, brake_power=12000))
+world.add_component(car, com.Engine(torque_curve=torque_curve, idle=700, rev_limit=7499, rpm=2000))
+world.add_component(car, com.GearBox(4.100, -3.437, 8.626, 2.188, 1.541, 1.213, 1.000, 0.767))
 world.add_component(car, com.ForwardForce())
 world.add_component(car, com.Steering(angle=0))
 
@@ -68,9 +72,10 @@ world.add_processor(pro.TestProcessor())
 #world.add_processor(pro.FForceProcessor())
 #world.add_processor(pro.AccelerationProcessor())
 #world.add_processor(pro.VelocityProcessor())
+#world.add_processor(pro.SteeringProcessor())
+
 #world.add_processor(pro.PositionProcessor())
 
-#world.add_processor(pro.SteeringProcessor())
 world.add_processor(pro.RenderProcessor(renderer=screen), priority=1)
 
 def gameLoop():
@@ -86,6 +91,10 @@ def gameLoop():
         #print(world.component_for_entity(car, com.ForwardForce).forward_force)
         #print(world.component_for_entity(car, com.Velocity).velV.magnitude()*3.6)
         # Input
+
+        dt = time.time() - last_time
+        last_time = time.time()
+        world.component_for_entity(car, com.DeltaTime).dt = dt
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -129,7 +138,6 @@ def gameLoop():
                     world.component_for_entity(car, com.Steering).steer_angle = (pygame.joystick.Joystick(0).get_axis(0)*1.25 - 0.25)*-35
                 else:
                     world.component_for_entity(car, com.Steering).steer_angle = 0
-
                 #Throttle
                 #print("RT = " + str(pygame.joystick.Joystick(0).get_axis(5)))
                 if pygame.joystick.Joystick(0).get_axis(5) >= -0.99:
@@ -147,11 +155,7 @@ def gameLoop():
         
         # Delta time to make sure everything runs as if its always 60 FPS
 
-        dt = time.time() - last_time
-        last_time = time.time()
-        dt = dt * constants.TARGET_FRAMERATE
-        world.component_for_entity(car, com.DeltaTime).dt = dt
-        
+        print("STEER ANGLE " + str(world.component_for_entity(car, com.Steering).steer_angle))
         # Background color
         screen.fill((255, 255, 255))
         # Update the game
@@ -163,6 +167,9 @@ def gameLoop():
         screen.blit(textsurface,(0,0))
         screen.blit(textsurface3,(0,50))
         screen.blit(textsurface2,(0,100))
+
+        rot_spr = pygame.transform.rotate(img2, world.component_for_entity(car, com.Steering).steer_angle+math.degrees(world.component_for_entity(car, com.Steering).heading)-180)
+        screen.blit(rot_spr, [world.component_for_entity(car, com.Position).posV.x, world.component_for_entity(car, com.Position).posV.y])
 
         # Test circle
         #pygame.draw.circle(screen, (0, 0, 255), (pos, 250), 75)
