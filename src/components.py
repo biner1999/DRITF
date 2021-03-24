@@ -1,4 +1,5 @@
 import pygame
+import constants
 from pygame.math import *
 
 class DeltaTime:
@@ -43,13 +44,14 @@ class Chassis:
         self.inertia = self.mass
         self.length = length
         self.width = width
-        self.weight_front_standstill = cg_rear_axle/wheelbase*mass
-        self.weight_rear_standstill = cg_front_axle/wheelbase*mass
+        self.weight_front_standstill = cg_rear_axle/wheelbase*mass*constants.GRAVITY
+        self.weight_rear_standstill = cg_front_axle/wheelbase*mass*constants.GRAVITY
         self.weight_front_dynamic = self.weight_front_standstill
         self.weight_rear_dynamic = self.weight_rear_standstill
 
         self.drive_torque = 0
         self.brake = 0
+        self.ebrake = 0
         self.brake_power = brake_power
         self.wheel_diameter = wheel_diameter
         self.wheel_radius = self.wheel_diameter/2
@@ -79,7 +81,7 @@ class ForwardForce:
         self.sideway_force = 0
 
 class Steering:
-    def __init__(self, angle):
+    def __init__(self):
         self.heading = 0
         self.steer_angle = 0
         self.sn = 0
@@ -88,3 +90,13 @@ class Steering:
         self.ffr = 0
         self.yawRate = 0
 
+class TileMap:
+    def __init__(self, tilemap, resolution):
+        self.tilemap = tilemap
+        self.resolution = resolution
+
+class Camera:
+    def __init__(self, posV, offset_x, offset_y):
+        self.posV = pygame.Vector2(posV)
+        self.offset_x = offset_x
+        self.offset_y = offset_y

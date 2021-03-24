@@ -5,33 +5,18 @@ import components as com
 import constants
 import numpy as np
 import math
+import pytmx
 
 
 class TestProcessor(esper.Processor):
 
     def process(self):
         for ent, (accel, dire, velo, ff, eng, grb, cha, dt, ster, caccel, cvelo, pos) in self.world.get_components(com.Acceleration, com.Direction, com.Velocity, com.ForwardForce, com.Engine, com.GearBox, com.Chassis, com.DeltaTime, com.Steering, com.CarAcceleration, com.CarVelocity, com.Position):
-            str_ang = math.radians(ster.steer_angle)
-            
-            sn = math.sin(ster.heading)
-            cs = math.cos(ster.heading)
+            pass
+class RPMTorqueProcessor(esper.Processor):
 
-            cvelo.velV.x = cs * velo.velV.y + sn * velo.velV.x
-            cvelo.velV.y = cs * velo.velV.x - sn * velo.velV.y
-
-            faw = cha.weight_front_standstill * constants.GRAVITY
-            raw = cha.weight_rear_standstill * constants.GRAVITY
-
-            #yawRate is wrong
-            yawSpeedFront = cha.cg_front_axle * ster.yawRate
-            yawSpeedRear = -cha.cg_rear_axle * ster.yawRate
-
-            slipAngleFront = math.atan2(cvelo.velV.y + yawSpeedFront, abs(cvelo.velV.x)) - np.sign(cvelo.velV.x) * str_ang
-            slipAngleRear  = math.atan2(cvelo.velV.y + yawSpeedRear,  abs(cvelo.velV.x))
-
-            ster.fff = np.clip(-5*slipAngleFront, -2, 2) * faw
-            ster.ffr = np.clip(-5.2*slipAngleRear, -2, 2) * raw
-
+    def process(self):
+        for ent, (accel, dire, velo, ff, eng, grb, cha, dt, cvelo) in self.world.get_components(com.Acceleration, com.Direction, com.Velocity, com.ForwardForce, com.Engine, com.GearBox, com.Chassis, com.DeltaTime, com.CarVelocity):
             # Calculates the engine RPM from speed
             eng.rpm = (abs(cvelo.velV.x)/cha.wheel_radius) * (grb.rear_diff * abs(grb.gear_ratios[grb.current_gear])) * constants.RADS_to_RPM
             # Manages the idle RPM
@@ -49,93 +34,29 @@ class TestProcessor(esper.Processor):
                 eng.rpm = eng.idle
             elif eng.rpm > eng.rev_limit:
                 eng.rpm = eng.rev_limit
-            #print(eng.rpm)
-            torque = (eng.throttle * eng.torque) * (grb.rear_diff * grb.gear_ratios[grb.current_gear])
-
-            ff.forward_force = torque / cha.wheel_radius  - cha.brake*cha.brake_power*np.sign(cvelo.velV.x)
-            ff.sideway_force = 0
-
-            drag_force_x = -constants.RR_COEFF * cvelo.velV.x - constants.DRAG_COEFF * cvelo.velV.x * abs(cvelo.velV.x);
-            drag_force_y = -constants.RR_COEFF * cvelo.velV.y - constants.DRAG_COEFF * cvelo.velV.y * abs(cvelo.velV.y);
-
-            total_force_x = ff.forward_force + drag_force_x
-            total_force_y = ff.sideway_force + drag_force_y + math.cos(str_ang) * ster.fff + ster.ffr
-
-            #print(velo.velV.y)
-            local_ax = total_force_x / cha.mass
-            local_ay = total_force_y / cha.mass
-
-            accel.accV.x = cs * local_ay + sn * local_ax
-            accel.accV.y = -sn * local_ay + cs * local_ax
-
-            velo.velV.x += accel.accV.x * dt.dt
-            velo.velV.y += accel.accV.y * dt.dt
-
-            pos.posV.x += velo.velV.x * dt.dt
-            pos.posV.y += velo.velV.y * dt.dt
-
-            angularTorque = ster.fff * cha.cg_front_axle - ster.ffr * cha.cg_rear_axle;
-
-            if(velo.velV.magnitude() < 1 and eng.throttle == 0):
-                velo.velV.y = 0
-                velo.velV.x = 0
-                angularTorque = 0
-                ster.yawRate = 0
-
-            angularAccel = angularTorque / cha.inertia
-
-            ster.yawRate += angularAccel * dt.dt
-            if(velo.velV.magnitude() < 1 and str_ang < 0.05):
-                ster.yawRate = 0
-            ster.heading += ster.yawRate * dt.dt
-
-class RPMTorqueProcessor(esper.Processor):
-
-    def process(self):
-        for ent, (accel, dire, velo, ff, eng, grb, cha, dt) in self.world.get_components(com.Acceleration, com.Direction, com.Velocity, com.ForwardForce, com.Engine, com.GearBox, com.Chassis, com.DeltaTime):
-            # Calculates the engine RPM from speed
-            eng.rpm = (abs(velo.velV.magnitude())/cha.wheel_radius) * (grb.rear_diff * abs(grb.gear_ratios[grb.current_gear])) * constants.RADS_to_RPM
-            # Manages the idle RPM
-            if eng.rpm < eng.idle:
-                eng.rpm = eng.idle
-                
-            # Calculates the torque
-            if eng.rpm >= eng.idle and eng.rpm < eng.rev_limit:
-                eng.torque = eng.torque_curve[int(eng.rpm) - eng.idle]
-            else:
-                eng.torque = 0
-
-            # Does not let RPM go over or under the rev limit
-            if eng.rpm < eng.idle:
-                eng.rpm = eng.idle
-            elif eng.rpm > eng.rev_limit:
-                eng.rpm = eng.rev_limit
-            #print(eng.rpm)
 
 
 class FForceProcessor(esper.Processor):
 
     def process(self):
-        for ent, (accel, dire, velo, ff, eng, grb, cha, dt) in self.world.get_components(com.Acceleration, com.Direction, com.Velocity, com.ForwardForce, com.Engine, com.GearBox, com.Chassis, com.DeltaTime):
+        for ent, (accel, dire, velo, ff, eng, grb, cha, dt, cvelo) in self.world.get_components(com.Acceleration, com.Direction, com.Velocity, com.ForwardForce, com.Engine, com.GearBox, com.Chassis, com.DeltaTime, com.CarVelocity):
             # Calculates the wheel torque from engine torque and throttle
             torque = (eng.throttle * eng.torque) * (grb.rear_diff * grb.gear_ratios[grb.current_gear])
 
-            ff.forward_force = torque / cha.wheel_radius
+            ff.forward_force = torque / cha.wheel_radius  - cha.brake*cha.brake_power*np.sign(cvelo.velV.x)
             ff.sideway_force = 0
 
 class AccelerationProcessor(esper.Processor):
 
     def process(self):
-        for ent, (ster, accel, caccel, dire, velo, cvelo, ff, eng, grb, cha, dt) in self.world.get_components(com.Steering, com.Acceleration, com.CarAcceleration, com.Direction, com.Velocity, com.CarVelocity, com.ForwardForce, com.Engine, com.GearBox, com.Chassis, com.DeltaTime):
-            str_ang = math.radians(ster.steer_angle)
-            
+        for ent, (ster, accel, caccel, dire, velo, cvelo, ff, eng, grb, cha, dt) in self.world.get_components(com.Steering, com.Acceleration, com.CarAcceleration, com.Direction, com.Velocity, com.CarVelocity, com.ForwardForce, com.Engine, com.GearBox, com.Chassis, com.DeltaTime):            
             # Resistance and total force as well as  acceleration
 
-            drag_force_x = -constants.RR_COEFF * velo.velV.x - constants.DRAG_COEFF * velo.velV.x * velo.velV.magnitude();
-            drag_force_y = -constants.RR_COEFF * velo.velV.y - constants.DRAG_COEFF * velo.velV.y * velo.velV.magnitude();
+            drag_force_x = -constants.RR_COEFF * cvelo.velV.x - constants.DRAG_COEFF * cvelo.velV.x * abs(cvelo.velV.x);
+            drag_force_y = -constants.RR_COEFF * cvelo.velV.y - constants.DRAG_COEFF * cvelo.velV.y * abs(cvelo.velV.y);
 
-            total_force_x = ff.forward_force + drag_force_x - cha.brake*cha.brake_power*np.sign(velo.velV.x)
-            total_force_y = ff.sideway_force + drag_force_y + math.cos(str_ang) * ster.fff + ster.ffr
+            total_force_x = ff.forward_force + drag_force_x
+            total_force_y = ff.sideway_force + drag_force_y + math.cos(ster.steer_angle) * ster.fff + ster.ffr
 
             #print(total_force_x)
             
@@ -143,8 +64,8 @@ class AccelerationProcessor(esper.Processor):
             caccel.accV.x = total_force_x / cha.mass
             caccel.accV.y = total_force_y / cha.mass
 
-            accel.accV.x = ster.cs * caccel.accV.x - ster.sn * caccel.accV.y
-            accel.accV.y = ster.sn * caccel.accV.x + ster.cs * caccel.accV.y
+            accel.accV.x = ster.cs * caccel.accV.y + ster.sn * caccel.accV.x
+            accel.accV.y = ster.cs * caccel.accV.x - ster.sn * caccel.accV.y
 
 class VelocityProcessor(esper.Processor):
 
@@ -165,6 +86,7 @@ class PositionProcessor(esper.Processor):
         for ent, (dt, velo, pos) in self.world.get_components(com.DeltaTime, com.Velocity, com.Position):
             pos.posV.x += velo.velV.x * dt.dt
             pos.posV.y += velo.velV.y * dt.dt
+            print(pos.posV.y)
 
 class RPMProcessor(esper.Processor):
     def process(self):
@@ -281,55 +203,40 @@ class SteeringProcessor(esper.Processor):
 
     def process(self):
         for ent, (ster, velo, cvelo, accel, caccel, cha, dt, ff, eng) in self.world.get_components(com.Steering, com.Velocity, com.CarVelocity, com.Acceleration, com.CarAcceleration, com.Chassis, com.DeltaTime, com.ForwardForce, com.Engine):
-            str_ang = ster.steer_angle
-            
             ster.sn = math.sin(ster.heading)
             ster.cs = math.cos(ster.heading)
 
-            cvelo.velV.x = ster.cs*velo.velV.x + ster.sn*velo.velV.y
-            cvelo.velV.y = ster.cs*velo.velV.y - ster.sn*velo.velV.x
+            cvelo.velV.x = ster.cs * velo.velV.y + ster.sn * velo.velV.x
+            cvelo.velV.y = ster.cs * velo.velV.x - ster.sn * velo.velV.y
+
+            transferX = (cha.cg_height/cha.wheelbase)*caccel.accV.x
+
+            cha.weight_front_dynamic = cha.mass * (cha.cg_rear_axle/cha.wheelbase * constants.GRAVITY - caccel.accV.x * cha.cg_height/cha.wheelbase)
+            cha.weight_rear_dynamic = cha.mass * (cha.cg_rear_axle/cha.wheelbase * constants.GRAVITY + caccel.accV.x * cha.cg_height/cha.wheelbase)
 
             yawSpeedFront = cha.cg_front_axle * ster.yawRate
             yawSpeedRear = -cha.cg_rear_axle * ster.yawRate
 
-
-            slipAngleFront = math.atan2(cvelo.velV.y + yawSpeedFront, abs(cvelo.velV.x)) - np.sign(cvelo.velV.x) * str_ang
+            slipAngleFront = math.atan2(cvelo.velV.y + yawSpeedFront, abs(cvelo.velV.x)) - np.sign(cvelo.velV.x) * ster.steer_angle
             slipAngleRear  = math.atan2(cvelo.velV.y + yawSpeedRear,  abs(cvelo.velV.x))
 
-            faw = cha.weight_front_standstill * constants.GRAVITY
-            raw = cha.weight_rear_standstill * constants.GRAVITY
-            
-            ster.fff = np.clip(-5*slipAngleFront, -2, 2) * faw
-            ster.ffr = np.clip(-5*slipAngleRear, -2, 2) * raw
-
-            angularTorque = (ster.fff + ff.sideway_force) * cha.cg_front_axle - ster.ffr * cha.cg_rear_axle;
+            ster.fff = np.clip(-5*slipAngleFront, -2, 2) * cha.weight_front_dynamic
+            ster.ffr = np.clip(-5.2*slipAngleRear, -2, 2) * cha.weight_rear_dynamic
+################################## Possibly split it down here #######################################
+            angularTorque = ster.fff * cha.cg_front_axle - ster.ffr * cha.cg_rear_axle;
 
             if(velo.velV.magnitude() < 1 and eng.throttle == 0):
                 velo.velV.y = 0
                 velo.velV.x = 0
                 angularTorque = 0
-                yawRate = 0
+                ster.yawRate = 0
 
             angularAccel = angularTorque / cha.inertia
 
             ster.yawRate += angularAccel * dt.dt
+            if(velo.velV.magnitude() < 1 and ster.steer_angle < 0.05):
+                ster.yawRate = 0
             ster.heading += ster.yawRate * dt.dt
-
-class SlipRatioProcessor(esper.Processor):
-
-    def process(self):
-        for ent, () in self.world.get_components():
-            slip_ratio_x = (wheel_ang_vel*cha.wheel_diameter/2 - velo.velV.x) / velo.velV.magnitude()
-            slip_ratio_y = (wheel_ang_vel*cha.wheel_diameter/2 - velo.velV.y) / velo.velV.magnitude()
-
-
-class WeightTransferProcessor(esper.Processor):
-
-    def process(self):
-        for ent, (chas, accel) in self.world.get_components(com.Chassis, com.Acceleration):
-            chas.weight_front_dynamic = chas.weight_front_standstill - (chas.cg_height/chas.wheelbase)*chas.mass*accel.accV.magnitude()
-            chas.weight_rear_dynamic = chas.weight_rear_standstill + (chas.cg_height/chas.wheelbase)*chas.mass*accel.accV.magnitude()
-
 class RenderProcessor(esper.Processor):
 
     def __init__(self, renderer):
@@ -337,14 +244,33 @@ class RenderProcessor(esper.Processor):
         self.renderer = renderer
 
     def process(self):
+        cam = self.world.component_for_entity(2, com.Camera)
         for ent, (spr, pos, stre) in self.world.get_components(com.Sprite, com.Position, com.Steering):
             rot_spr = pygame.transform.rotate(spr.sprite, math.degrees(stre.heading)-180)
-            self.renderer.blit(rot_spr, [pos.posV.x, pos.posV.y])
+            self.renderer.blit(rot_spr, [pos.posV.x-cam.posV.x, pos.posV.y-cam.posV.y])
 
 
+class TileMapProcessor(esper.Processor):
 
+    def __init__(self, renderer):
+        super().__init__()
+        self.renderer = renderer
+    
+    def process(self):
+        for ent, (tm, cam) in self.world.get_components(com.TileMap, com.Camera):
+            for layer in tm.tilemap.layers:
+                for x, y, image in layer.tiles():
+                    self.renderer.blit(image, [x*tm.resolution-cam.posV.x, y*tm.resolution-cam.posV.y])
 
+class CameraProcessor(esper.Processor):
 
+    def process(self):
+        car_pos = self.world.component_for_entity(1, com.Position).posV
+        sprite = self.world.component_for_entity(1, com.Sprite).sprite
+        for ent, (cam) in self.world.get_component(com.Camera):
+            cam.posV.x += car_pos.x - cam.posV.x - cam.offset_x + sprite.get_width()/2
+            cam.posV.y += car_pos.y - cam.posV.y - cam.offset_y + sprite.get_height()/2
+            
 
 
 class XXXProcessor(esper.Processor):
