@@ -14,12 +14,13 @@ from pygame.locals import *
 from pygame.joystick import *
 import constants
 import world
+import random
 
 # Intializations of PyGame and Joystick module
 pygame.init()
 pygame.font.init() # you have to call this at the start, 
                    # if you want to use this module.
-myfont = pygame.font.SysFont('Comic Sans MS', 30)
+myfont = pygame.font.SysFont('Comic Sans MS', 100)
 
 pygame.joystick.Joystick(0).init()
 joysticks = [pygame.joystick.Joystick(x) 
@@ -54,7 +55,7 @@ img2 = pygame.image.load("assets/arrow_yellow.png")
 
 world.add_component(car, com.Sprite(sprite=img))
 
-world.add_component(car, com.Position(initV=([1000, 1000])))
+world.add_component(car, com.Position(initV=([960, 540])))
 world.add_component(car, com.Velocity())
 world.add_component(car, com.Acceleration())
 world.add_component(car, com.CarAcceleration())
@@ -77,15 +78,68 @@ world.add_processor(pro.VelocityProcessor())
 world.add_processor(pro.PositionProcessor())
 
 
-world.add_processor(pro.RenderProcessor(renderer=screen), priority=1)
+world.add_processor(pro.RenderProcessor(renderer=screen), priority=2)
 
 tiled_map = pytmx.load_pygame("assets/maps/untitled.tmx")
 
 tilemap = world.create_entity(com.TileMap(tilemap=tiled_map, resolution=128), com.Camera(posV=[0,0],offset_x=screen.get_width()/2, offset_y=screen.get_height()/2))
 
-world.add_processor(pro.TileMapProcessor(renderer=screen), priority=2)
+world.add_processor(pro.TileMapProcessor(renderer=screen), priority=3)
 
-world.add_processor(pro.CameraProcessor(), priority=3)
+world.add_processor(pro.CameraProcessor(), priority=4)
+tyre_smoke = world.create_entity(com.Particles())
+world.add_processor(pro.AddParticlesProcessor(), priority=2)
+world.add_processor(pro.RenderParticlesProcessor(renderer=screen), priority=1)
+
+def drawTextCentred(font, text, color, surface, x, y):
+    textobj = font.render(text, 1, color)
+    textrect = textobj.get_rect()
+    surface.blit(textobj, (x - textrect.width/2, y - textrect.height/2))
+
+
+def menuLoop():
+    # Framerate clock
+    last_time = time.time()
+    clock = pygame.time.Clock()
+
+    # Run until the user asks to quit
+    running = True
+    click = False
+
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                click = True
+
+        screen.fill((100,5,5))
+
+        mx, my = pygame.mouse.get_pos()
+
+        play_button = pygame.Rect(screen.get_width()/2-150, screen.get_height()/3, 300, 120)
+        pygame.draw.rect(screen, (240, 240, 240), play_button)
+        
+        modify_button = pygame.Rect(screen.get_width()/2-150, screen.get_height()/2, 300, 120)
+        pygame.draw.rect(screen, (240, 240, 240), modify_button)
+
+        drawTextCentred(myfont, "DRITF!", (155, 155, 155), screen, screen.get_width()/2, screen.get_height()/5)
+
+        drawTextCentred(myfont, "PLAY", (0, 0, 0), screen, (play_button.x + play_button.width/2), (play_button.y + play_button.height/2))
+        drawTextCentred(myfont, "MODIFY", (0, 0, 0), screen, (modify_button.x + modify_button.width/2), (modify_button.y + modify_button.height/2))
+
+        if play_button.collidepoint((mx, my)):
+            if click:
+                gameLoop()
+        if modify_button.collidepoint((mx, my)):
+            if click:
+                pass
+
+        dt = time.time() - last_time
+        last_time = time.time()
+
+        pygame.display.update()
+        clock.tick(constants.TARGET_FRAMERATE)
 
 def gameLoop():
     # Framerate clock
@@ -165,19 +219,14 @@ def gameLoop():
 
         # Update the game
         world.process()
-
-        rot_spr = pygame.transform.rotate(img2, world.component_for_entity(car, com.Steering).steer_angle+math.degrees(world.component_for_entity(car, com.Steering).heading)-180)
-        screen.blit(rot_spr, [world.component_for_entity(car, com.Position).posV.x, world.component_for_entity(car, com.Position).posV.y])
-        pygame.draw.rect(screen, (255,0,0), (960,540,15,15))
-        # Test circle
-        #pygame.draw.circle(screen, (0, 0, 255), (pos, 250), 75)
+        #pygame.draw.rect(screen, (255, 0, 0), (world.component_for_entity(car, com.Position).posV.x, world.component_for_entity(car, com.Position).posV.y, world.component_for_entity(car, com.Sprite).sprite.get_width(), world.component_for_entity(car, com.Sprite).sprite.get_height()))
 
         # Updates display
         pygame.display.update()
         clock.tick(constants.TARGET_FRAMERATE)
 
 
-gameLoop()
+menuLoop()
 
 # Quit
 #pygame.joystick.quit()

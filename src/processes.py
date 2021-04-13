@@ -6,6 +6,8 @@ import constants
 import numpy as np
 import math
 import pytmx
+import random
+from collections import defaultdict
 
 
 class TestProcessor(esper.Processor):
@@ -86,8 +88,7 @@ class PositionProcessor(esper.Processor):
         for ent, (dt, velo, pos) in self.world.get_components(com.DeltaTime, com.Velocity, com.Position):
             pos.posV.x += velo.velV.x * dt.dt
             pos.posV.y += velo.velV.y * dt.dt
-            print(pos.posV.y)
-
+            
 class RPMProcessor(esper.Processor):
     def process(self):
         for ent, (eng, grb, cha, velo, dt) in self.world.get_components(com.Engine, com.GearBox, com.Chassis, com.Velocity, com.DeltaTime):
@@ -248,6 +249,7 @@ class RenderProcessor(esper.Processor):
         for ent, (spr, pos, stre) in self.world.get_components(com.Sprite, com.Position, com.Steering):
             rot_spr = pygame.transform.rotate(spr.sprite, math.degrees(stre.heading)-180)
             self.renderer.blit(rot_spr, [pos.posV.x-cam.posV.x, pos.posV.y-cam.posV.y])
+            #self.renderer.blit(rot_spr, [pos.posV.x, pos.posV.y])
 
 
 class TileMapProcessor(esper.Processor):
@@ -258,9 +260,22 @@ class TileMapProcessor(esper.Processor):
     
     def process(self):
         for ent, (tm, cam) in self.world.get_components(com.TileMap, com.Camera):
+            for i in range(len(tm.tilemap.layers)):
+                layer_name = tm.tilemap.layers[i].name
+                tm.rects_dict[layer_name] = []
+            
             for layer in tm.tilemap.layers:
                 for x, y, image in layer.tiles():
                     self.renderer.blit(image, [x*tm.resolution-cam.posV.x, y*tm.resolution-cam.posV.y])
+                    tm.rects.append(pygame.Rect(x*tm.resolution, y*tm.resolution, tm.resolution, tm.resolution))
+                    tm.rects_dict[layer.name].append(pygame.Rect(x*tm.resolution, y*tm.resolution, tm.resolution, tm.resolution))
+            #for i in range(len(tm.rects)):
+            #    pygame.draw.rect(self.renderer, (0, 255, 0), (tm.rects[i].x, tm.rects[i].y, tm.rects[i].width, tm.rects[i].height))
+            #color = 0
+            #for key in tm.rects_dict:
+            #    color += 100
+            #    for value in tm.rects_dict[key]:
+            #        pygame.draw.rect(self.renderer, (0,color,0), value)
 
 class CameraProcessor(esper.Processor):
 
@@ -270,7 +285,54 @@ class CameraProcessor(esper.Processor):
         for ent, (cam) in self.world.get_component(com.Camera):
             cam.posV.x += car_pos.x - cam.posV.x - cam.offset_x + sprite.get_width()/2
             cam.posV.y += car_pos.y - cam.posV.y - cam.offset_y + sprite.get_height()/2
-            
+
+
+class AddParticlesProcessor(esper.Processor):
+
+    def __init__(self):
+        super().__init__()
+    
+    def process(self):
+        car_pos = self.world.component_for_entity(1, com.Position).posV
+        cam_pos = self.world.component_for_entity(2, com.Camera).posV
+        for ent, (par) in self.world.get_component(com.Particles):
+            for i in range(10):
+                r = random.randrange(110,150)
+                par.smoke.append([car_pos.x-cam_pos.x, car_pos.y-cam_pos.y])
+                par.smoke_c.append(r)
+                par.smoke_d.append(200)
+
+class RenderParticlesProcessor(esper.Processor):
+
+    def __init__(self, renderer):
+        super().__init__()
+        self.renderer = renderer
+    
+    def process(self):
+        for ent, (par) in self.world.get_component(com.Particles):
+            for i in par.smoke:
+                j = par.smoke.index(i)
+                i[1]-=random.randint(-1,3)
+                i[0]+=random.randint(-4, 4)
+                #r = random.randrange(1,200)
+                r = par.smoke_c[j]
+                par.smoke_d[j] -= 2
+                a = par.smoke_d[j]
+                if i[1]<0 or a <= 0:
+                    par.smoke.remove(i)
+                    par.smoke_c.remove(r)
+                    par.smoke_d.remove(a)
+                else:
+                    s = pygame.Surface((10, 10), pygame.SRCALPHA)
+                    s.fill((r,r,r,a))
+                    self.renderer.blit(s, (i[0], i[1]))
+
+class CollisionsProcessor(esper.Processor):
+
+    def process(self):
+        for ent, () in self.world.get_components():
+            pass
+
 
 
 class XXXProcessor(esper.Processor):

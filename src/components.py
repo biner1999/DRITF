@@ -1,6 +1,7 @@
 import pygame
 import constants
 from pygame.math import *
+from collections import defaultdict
 
 class DeltaTime:
     def __init__(self):
@@ -94,9 +95,27 @@ class TileMap:
     def __init__(self, tilemap, resolution):
         self.tilemap = tilemap
         self.resolution = resolution
+        self.rects = []
+        self.rects_dict = defaultdict(list)
 
 class Camera:
     def __init__(self, posV, offset_x, offset_y):
         self.posV = pygame.Vector2(posV)
         self.offset_x = offset_x
         self.offset_y = offset_y
+
+class Particles:
+    def __init__(self):
+        self.smoke = []
+        self.smoke_c = []
+        self.smoke_d = []
+        self.decay = 0.5
+
+class Color:
+    def __init__(self, color):
+        self.color = color
+
+class Dispersion:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
