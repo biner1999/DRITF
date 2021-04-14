@@ -21,6 +21,8 @@ pygame.init()
 pygame.font.init() # you have to call this at the start, 
                    # if you want to use this module.
 myfont = pygame.font.SysFont('Comic Sans MS', 100)
+mysmallfont = pygame.font.SysFont('Comic Sans MS', 50)
+
 
 pygame.joystick.Joystick(0).init()
 joysticks = [pygame.joystick.Joystick(x) 
@@ -66,7 +68,7 @@ world.add_component(car, com.Chassis(wheelbase=2.57, cg_front_axle=1.208, cg_rea
 world.add_component(car, com.Engine(torque_curve=torque_curve, idle=700, rev_limit=7499, rpm=2000))
 world.add_component(car, com.GearBox(4.100, -3.437, 3.626, 2.188, 1.541, 1.213, 1.000, 0.767))
 world.add_component(car, com.ForwardForce())
-world.add_component(car, com.Steering())
+world.add_component(car, com.Steering(35))
 
 # Processors
 #world.add_processor(pro.TestProcessor())
@@ -96,6 +98,74 @@ def drawTextCentred(font, text, color, surface, x, y):
     textrect = textobj.get_rect()
     surface.blit(textobj, (x - textrect.width/2, y - textrect.height/2))
 
+def slider(surface,
+            bar_width, bar_height, bar_xpos, bar_ypos, bar_color,
+            thing_width, thing_color, current_value,
+            min_val, max_val,
+            mx, my, click):
+
+    actual_bar_width = bar_width - thing_width
+    range_val = max_val - min_val
+    interval = actual_bar_width/range_val
+
+    thing_pos = (current_value-min_val)*interval+bar_xpos
+
+    if mx < bar_xpos:
+        mx = bar_xpos
+    elif mx > bar_xpos - thing_width + bar_width:
+        mx = bar_xpos - thing_width + bar_width
+    
+    slider_bar = pygame.Rect(bar_xpos, bar_ypos, bar_width, bar_height)
+    pygame.draw.rect(screen, bar_color, slider_bar)
+    if slider_bar.collidepoint((mx, my)):
+        if click:
+            thing_pos = mx
+        
+    slider_thing = pygame.Rect(thing_pos, bar_ypos, thing_width, bar_height)
+    pygame.draw.rect(screen, thing_color, slider_thing)
+    actual_thing_pos = thing_pos - bar_xpos
+    val = min_val + round(actual_thing_pos/interval)
+    world.component_for_entity(car, com.Steering).max_angle = val
+
+    
+
+def modifyLoop():
+    # Framerate clock
+    last_time = time.time()
+    clock = pygame.time.Clock()
+
+    # Run until the user asks to quit
+    running = True
+    click = False
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            click = pygame.mouse.get_pressed()[0]
+
+        screen.fill((100,5,5))
+
+        mx, my = pygame.mouse.get_pos()
+        slider(screen, screen.get_width()/4*2, 50, screen.get_width()/4, 400, (155, 155, 155), 30, (255, 255, 255), world.component_for_entity(car, com.Steering).max_angle, 30, 80, mx, my, click)
+        drawTextCentred(mysmallfont, str(world.component_for_entity(car, com.Steering).max_angle), (0, 0, 0), screen, screen.get_width()/6*5, 400+25)
+        drawTextCentred(mysmallfont, "Steering Angle", (0, 0, 0), screen, screen.get_width()/2, 400-25)
+
+        back_button = pygame.Rect(50, 50, 300, 120)
+        pygame.draw.rect(screen, (240, 240, 240), back_button) 
+
+        drawTextCentred(myfont, "DRITF!", (155, 155, 155), screen, screen.get_width()/2, screen.get_height()/5)
+
+        drawTextCentred(myfont, "BACK", (0, 0, 0), screen, (back_button.x + back_button.width/2), (back_button.y + back_button.height/2))
+
+        if back_button.collidepoint((mx, my)):
+            if click:
+                running = False
+        
+        dt = time.time() - last_time
+        last_time = time.time()
+
+        pygame.display.update()
+        clock.tick(constants.TARGET_FRAMERATE)
 
 def menuLoop():
     # Framerate clock
@@ -133,8 +203,9 @@ def menuLoop():
                 gameLoop()
         if modify_button.collidepoint((mx, my)):
             if click:
-                pass
-
+                modifyLoop()
+        click = False
+        
         dt = time.time() - last_time
         last_time = time.time()
 
@@ -159,11 +230,14 @@ def gameLoop():
         world.component_for_entity(car, com.DeltaTime).dt = dt
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
-            if event.type == KEYDOWN:
+                pygame.quit()
+            if event.type == pygame.KEYDOWN:
                 if event.key == K_RIGHT:
                     pass
             if event.type == pygame.JOYBUTTONDOWN:
+                #Go back to main menu
+                if pygame.joystick.Joystick(0).get_button(7):
+                    running = False
                 #Gear down
                 if pygame.joystick.Joystick(0).get_button(4):
                     if world.component_for_entity(car, com.GearBox).current_gear > 0:
@@ -193,9 +267,9 @@ def gameLoop():
                 #Steering
 
                 if pygame.joystick.Joystick(0).get_axis(0) < -0.2:
-                    world.component_for_entity(car, com.Steering).steer_angle = math.radians((pygame.joystick.Joystick(0).get_axis(0)*1.25 + 0.25)*-35)
+                    world.component_for_entity(car, com.Steering).steer_angle = math.radians((pygame.joystick.Joystick(0).get_axis(0)*1.25 + 0.25)*-world.component_for_entity(car, com.Steering).max_angle)
                 elif pygame.joystick.Joystick(0).get_axis(0) > 0.2:
-                    world.component_for_entity(car, com.Steering).steer_angle = math.radians((pygame.joystick.Joystick(0).get_axis(0)*1.25 - 0.25)*-35)
+                    world.component_for_entity(car, com.Steering).steer_angle = math.radians((pygame.joystick.Joystick(0).get_axis(0)*1.25 - 0.25)*-world.component_for_entity(car, com.Steering).max_angle)
                 else:
                     world.component_for_entity(car, com.Steering).steer_angle = 0
                 #Throttle
@@ -216,7 +290,7 @@ def gameLoop():
 
         # Background color
         #screen.fill((255, 255, 255))
-
+        print(world.component_for_entity(car, com.Steering).steer_angle)
         # Update the game
         world.process()
         #pygame.draw.rect(screen, (255, 0, 0), (world.component_for_entity(car, com.Position).posV.x, world.component_for_entity(car, com.Position).posV.y, world.component_for_entity(car, com.Sprite).sprite.get_width(), world.component_for_entity(car, com.Sprite).sprite.get_height()))

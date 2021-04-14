@@ -82,7 +82,8 @@ class ForwardForce:
         self.sideway_force = 0
 
 class Steering:
-    def __init__(self):
+    def __init__(self, max_angle):
+        self.max_angle = max_angle
         self.heading = 0
         self.steer_angle = 0
         self.sn = 0
