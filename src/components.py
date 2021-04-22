@@ -93,9 +93,8 @@ class Steering:
         self.yawRate = 0
 
 class TileMap:
-    def __init__(self, tilemap, resolution):
+    def __init__(self, tilemap):
         self.tilemap = tilemap
-        self.resolution = resolution
         self.rects = []
         self.rects_dict = defaultdict(list)
 
@@ -106,11 +105,14 @@ class Camera:
         self.offset_y = offset_y
 
 class Particles:
-    def __init__(self):
+    def __init__(self, angle_offset):
+        self.particles = []
         self.smoke = []
         self.smoke_c = []
         self.smoke_d = []
+        self.smoke_a = []
         self.decay = 0.5
+        self.angle_offset = angle_offset
 
 class Color:
     def __init__(self, color):
@@ -120,3 +122,16 @@ class Dispersion:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+
+class Rect:
+    def __init__(self, x, y, w, h):
+        self.rect = pygame.Rect(x, y, w, h)
+
+class TileMapCollisions:
+    def __init__(self):
+        self.rects = defaultdict(list)
+
+class ObjectCollisions:
+    def __init__(self):
+        self.rect = None
+

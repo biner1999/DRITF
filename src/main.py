@@ -69,6 +69,8 @@ world.add_component(car, com.Engine(torque_curve=torque_curve, idle=700, rev_lim
 world.add_component(car, com.GearBox(4.100, -3.437, 3.626, 2.188, 1.541, 1.213, 1.000, 0.767))
 world.add_component(car, com.ForwardForce())
 world.add_component(car, com.Steering(35))
+world.add_component(car, com.ObjectCollisions())
+world.add_component(car, com.Rect(960, 540, img.get_width(), img.get_height()))
 
 # Processors
 #world.add_processor(pro.TestProcessor())
@@ -84,19 +86,58 @@ world.add_processor(pro.RenderProcessor(renderer=screen), priority=2)
 
 tiled_map = pytmx.load_pygame("assets/maps/untitled.tmx")
 
-tilemap = world.create_entity(com.TileMap(tilemap=tiled_map, resolution=128), com.Camera(posV=[0,0],offset_x=screen.get_width()/2, offset_y=screen.get_height()/2))
+tilemap = world.create_entity(com.TileMap(tilemap=tiled_map), com.Camera(posV=[0,0],offset_x=screen.get_width()/2, offset_y=screen.get_height()/2), com.TileMapCollisions())
 
 world.add_processor(pro.TileMapProcessor(renderer=screen), priority=3)
 
-world.add_processor(pro.CameraProcessor(), priority=4)
-tyre_smoke = world.create_entity(com.Particles())
+world.add_processor(pro.CameraProcessor(renderer=screen), priority=4)
+tyre_smoke_right = world.create_entity(com.Particles(angle_offset=0.4))
+tyre_smoke_left = world.create_entity(com.Particles(angle_offset=-0.4))
+
 world.add_processor(pro.AddParticlesProcessor(), priority=2)
-world.add_processor(pro.RenderParticlesProcessor(renderer=screen), priority=1)
+world.add_processor(pro.RenderParticlesProcessor(renderer=screen), priority=3)
+world.add_processor(pro.CollisionsProcessor(renderer=screen))
+def points():
+    s = pygame.Surface((400, 80), pygame.SRCALPHA)
+    s.fill((0,0,0,80))
+    screen.blit(s, (0,0))
+    points = "{:,}".format(1000000)
+    drawTextLeft(mysmallfont, points, (255, 255, 255), screen, s.get_width()/10, s.get_height()/2)
+
+def speedo():
+    s = pygame.Surface((500, 250), pygame.SRCALPHA)
+    s.fill((0,0,0,80))
+    screen.blit(s, (screen.get_width()-500, screen.get_height()-250))
+
+    if world.component_for_entity(car, com.GearBox).current_gear == 0:
+        gear = "R"
+    elif world.component_for_entity(car, com.GearBox).current_gear == 1:
+        gear = "N"
+    else:
+        gear = str(world.component_for_entity(car, com.GearBox).current_gear - 1)
+    drawTextCentred(myfont, gear, (255, 255, 255), screen, 1750, 1000)
+
+    speed = round(world.component_for_entity(car, com.Velocity).velV.magnitude()*3.6)
+    drawTextCentred(myfont, str(speed), (255, 255, 255), screen, 1650, 1000)
+    a = pygame.Rect(1440, 900, 500, 220)
+    pygame.draw.arc(screen, (215, 108, 0), a, 0.5, 2.64, 30)
+    pygame.draw.arc(screen, (165, 0, 0), a, 0.5, 1, 30)
+
+    oldr = 7500
+    newr = 0.5-2.64
+    newv = (((world.component_for_entity(car, com.Engine).rpm)*newr)/oldr) + 2.64
+    pygame.draw.arc(screen, (255, 178, 0), a, newv, 2.64, 30)
+
 
 def drawTextCentred(font, text, color, surface, x, y):
     textobj = font.render(text, 1, color)
     textrect = textobj.get_rect()
     surface.blit(textobj, (x - textrect.width/2, y - textrect.height/2))
+
+def drawTextLeft(font, text, color, surface, x, y):
+    textobj = font.render(text, 1, color)
+    textrect = textobj.get_rect()
+    surface.blit(textobj, (x, y - textrect.height/2))
 
 def slider(surface,
             bar_width, bar_height, bar_xpos, bar_ypos, bar_color,
@@ -126,8 +167,6 @@ def slider(surface,
     actual_thing_pos = thing_pos - bar_xpos
     val = min_val + round(actual_thing_pos/interval)
     world.component_for_entity(car, com.Steering).max_angle = val
-
-    
 
 def modifyLoop():
     # Framerate clock
@@ -242,13 +281,13 @@ def gameLoop():
                 if pygame.joystick.Joystick(0).get_button(4):
                     if world.component_for_entity(car, com.GearBox).current_gear > 0:
                         world.component_for_entity(car, com.GearBox).current_gear -= 1
-                        print(world.component_for_entity(car, com.GearBox).current_gear)
+                        #print(world.component_for_entity(car, com.GearBox).current_gear)
 
                 #Gear up
                 if pygame.joystick.Joystick(0).get_button(5):
                     if world.component_for_entity(car, com.GearBox).current_gear < world.component_for_entity(car, com.GearBox).no_of_gears-1:
                         world.component_for_entity(car, com.GearBox).current_gear += 1
-                        print(world.component_for_entity(car, com.GearBox).current_gear)
+                        #print(world.component_for_entity(car, com.GearBox).current_gear)
                 #Clutch
                 if pygame.joystick.Joystick(0).get_button(0):
                     world.component_for_entity(car, com.GearBox).clutch = True
@@ -290,9 +329,10 @@ def gameLoop():
 
         # Background color
         #screen.fill((255, 255, 255))
-        print(world.component_for_entity(car, com.Steering).steer_angle)
         # Update the game
         world.process()
+        speedo()
+        points()
         #pygame.draw.rect(screen, (255, 0, 0), (world.component_for_entity(car, com.Position).posV.x, world.component_for_entity(car, com.Position).posV.y, world.component_for_entity(car, com.Sprite).sprite.get_width(), world.component_for_entity(car, com.Sprite).sprite.get_height()))
 
         # Updates display
