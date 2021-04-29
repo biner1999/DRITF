@@ -1,30 +1,42 @@
 # Imports
-import pygame
+# General libraries
 import sys
 import time
-import esper
-import components as com
-import processes as pro
-import functions as fun
-import numpy as np
+import random
 import math
+import numpy as np
 from scipy import interpolate
-import pytmx
+
+# Game related libraries
+import pygame
 from pygame.locals import *
 from pygame.joystick import *
+import esper
+import pytmx
+
+# My files
+# ECS
+import components as com
+import processes as pro
+import carphysics as carphys
+import graphics
+import gui
+import particles
+# Other
+import functions as func
 import constants
 import world
-import random
 
-# Intializations of PyGame and Joystick module
+# Intializations of PyGame modules
 pygame.init()
-pygame.font.init() # you have to call this at the start, 
-                   # if you want to use this module.
+pygame.font.init()
+pygame.joystick.Joystick(0).init()
+
+# Fonts
 myfont = pygame.font.SysFont('Comic Sans MS', 100)
 mysmallfont = pygame.font.SysFont('Comic Sans MS', 50)
 
-
-pygame.joystick.Joystick(0).init()
+# Joystick
 joysticks = [pygame.joystick.Joystick(x) 
 for x in range(pygame.joystick.get_count())]
 
@@ -33,6 +45,7 @@ pygame.display.set_caption("DRITF!")
 win_res = (1920, 1080)
 screen = pygame.display.set_mode(win_res,0,32)
 
+# Create a game world
 world = esper.World()
 
 def torque_calc():
@@ -57,7 +70,7 @@ img2 = pygame.image.load("assets/arrow_yellow.png")
 
 world.add_component(car, com.Sprite(sprite=img))
 
-world.add_component(car, com.Position(initV=([960, 540])))
+world.add_component(car, com.Position(initV=([960/28, 540/28])))
 world.add_component(car, com.Velocity())
 world.add_component(car, com.Acceleration())
 world.add_component(car, com.CarAcceleration())
@@ -73,60 +86,42 @@ world.add_component(car, com.ObjectCollisions())
 world.add_component(car, com.Rect(960, 540, img.get_width(), img.get_height()))
 
 # Processors
-#world.add_processor(pro.TestProcessor())
-world.add_processor(pro.SteeringProcessor())
-world.add_processor(pro.RPMTorqueProcessor())
-world.add_processor(pro.FForceProcessor())
-world.add_processor(pro.AccelerationProcessor())
-world.add_processor(pro.VelocityProcessor())
-world.add_processor(pro.PositionProcessor())
+#world.add_processor(carphys.TestProcessor())
+world.add_processor(carphys.SteeringProcessor())
+world.add_processor(carphys.RPMTorqueProcessor())
+world.add_processor(carphys.FForceProcessor())
+world.add_processor(carphys.AccelerationProcessor())
+world.add_processor(carphys.VelocityProcessor())
+world.add_processor(carphys.PositionProcessor())
 
 
-world.add_processor(pro.RenderProcessor(renderer=screen), priority=2)
+world.add_processor(graphics.RenderProcessor(renderer=screen), priority=2)
 
 tiled_map = pytmx.load_pygame("assets/maps/untitled.tmx")
 
 tilemap = world.create_entity(com.TileMap(tilemap=tiled_map), com.Camera(posV=[0,0],offset_x=screen.get_width()/2, offset_y=screen.get_height()/2), com.TileMapCollisions())
 
-world.add_processor(pro.TileMapProcessor(renderer=screen), priority=3)
+world.add_processor(graphics.TileMapProcessor(renderer=screen), priority=3)
 
-world.add_processor(pro.CameraProcessor(renderer=screen), priority=4)
+world.add_processor(graphics.CameraProcessor(renderer=screen), priority=4)
 tyre_smoke_right = world.create_entity(com.Particles(angle_offset=0.4))
 tyre_smoke_left = world.create_entity(com.Particles(angle_offset=-0.4))
 
-world.add_processor(pro.AddParticlesProcessor(), priority=2)
-world.add_processor(pro.RenderParticlesProcessor(renderer=screen), priority=3)
+world.add_processor(particles.AddParticlesProcessor(), priority=2)
+world.add_processor(particles.RenderParticlesProcessor(renderer=screen), priority=3)
 world.add_processor(pro.CollisionsProcessor(renderer=screen))
-def points():
-    s = pygame.Surface((400, 80), pygame.SRCALPHA)
-    s.fill((0,0,0,80))
-    screen.blit(s, (0,0))
-    points = "{:,}".format(1000000)
-    drawTextLeft(mysmallfont, points, (255, 255, 255), screen, s.get_width()/10, s.get_height()/2)
 
-def speedo():
-    s = pygame.Surface((500, 250), pygame.SRCALPHA)
-    s.fill((0,0,0,80))
-    screen.blit(s, (screen.get_width()-500, screen.get_height()-250))
+points = world.create_entity(com.Text("0", "Arial", 40, 1), com.Surface(400, 80, (0, 0, 0, 80)), com.Location(0, 0), com.Points(0))
 
-    if world.component_for_entity(car, com.GearBox).current_gear == 0:
-        gear = "R"
-    elif world.component_for_entity(car, com.GearBox).current_gear == 1:
-        gear = "N"
-    else:
-        gear = str(world.component_for_entity(car, com.GearBox).current_gear - 1)
-    drawTextCentred(myfont, gear, (255, 255, 255), screen, 1750, 1000)
+speed = world.create_entity(com.Text("0", "Arial", 70, 2), com.Surface(140, 80, (255, 140, 0, 80)), com.Location(1550, 950))
+gear = world.create_entity(com.Text("N", "Arial", 70, 2), com.Surface(100, 80, (255, 140, 0, 80)), com.Location(1700, 950))
 
-    speed = round(world.component_for_entity(car, com.Velocity).velV.magnitude()*3.6)
-    drawTextCentred(myfont, str(speed), (255, 255, 255), screen, 1650, 1000)
-    a = pygame.Rect(1440, 900, 500, 220)
-    pygame.draw.arc(screen, (215, 108, 0), a, 0.5, 2.64, 30)
-    pygame.draw.arc(screen, (165, 0, 0), a, 0.5, 1, 30)
+world.add_processor(gui.Gear())
+world.add_processor(gui.Speed())
+world.add_processor(gui.PointsCalculaton())
+world.add_processor(gui.Speedometer(renderer=screen))
+world.add_processor(gui.DisplayBoxText(renderer=screen))
 
-    oldr = 7500
-    newr = 0.5-2.64
-    newv = (((world.component_for_entity(car, com.Engine).rpm)*newr)/oldr) + 2.64
-    pygame.draw.arc(screen, (255, 178, 0), a, newv, 2.64, 30)
 
 
 def drawTextCentred(font, text, color, surface, x, y):
@@ -331,8 +326,7 @@ def gameLoop():
         #screen.fill((255, 255, 255))
         # Update the game
         world.process()
-        speedo()
-        points()
+        #speedo()
         #pygame.draw.rect(screen, (255, 0, 0), (world.component_for_entity(car, com.Position).posV.x, world.component_for_entity(car, com.Position).posV.y, world.component_for_entity(car, com.Sprite).sprite.get_width(), world.component_for_entity(car, com.Sprite).sprite.get_height()))
 
         # Updates display

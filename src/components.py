@@ -135,3 +135,33 @@ class ObjectCollisions:
     def __init__(self):
         self.rect = None
 
+class Text:
+    def __init__(self, text, font_name, font_size, alignment):
+        self.text = text
+        self.font = pygame.font.SysFont(font_name, font_size)
+        self.alignment = alignment
+
+class Size:
+    def __init__(self, height, width):
+        self.height = height
+        self.width = width
+
+class Surface:
+    def __init__(self, width, height, color):
+        self.width = width
+        self.height = height
+        self.color = color
+
+class Location:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+
+class Points:
+    def __init__(self, points):
+        self.points = points
+
+class Gear:
+    def __init__(self, gear):
+        self.gear = gear
