@@ -24,8 +24,13 @@ class CollisionsProcessor(esper.Processor):
                     #pygame.draw.rect(self.renderer, (0, 255, 0), tile)
                     if rect.rect.colliderect(tile):
                         hit_list.append(tile)
-                print(hit_list)
-
+        hit_list = []
+        car_rect = self.world.component_for_entity(1, com.Rect).rect
+        for ent, (rect) in self.world.get_component(com.Rect):
+            if ent != 1:
+                if car_rect.colliderect(rect.rect):
+                    hit_list.append(rect.rect)
+        print(hit_list)
 class XXXProcessor(esper.Processor):
 
     def process(self):

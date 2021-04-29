@@ -66,7 +66,6 @@ car = world.create_entity()
 world.add_component(car, com.DeltaTime())
 
 img = pygame.image.load("assets/car_black_5.png")
-img2 = pygame.image.load("assets/arrow_yellow.png")
 
 world.add_component(car, com.Sprite(sprite=img))
 
@@ -122,7 +121,11 @@ world.add_processor(gui.PointsCalculaton())
 world.add_processor(gui.Speedometer(renderer=screen))
 world.add_processor(gui.DisplayBoxText(renderer=screen))
 
+cone = pygame.image.load("assets/cone_straight.png")
 
+marker = world.create_entity(com.Sprite(cone), com.Location(620, 2200), com.Angle(0), com.ObjectCollisions(), com.Rect(620, 2200, cone.get_width(), cone.get_height()))
+
+world.add_processor(graphics.RenderObjectsProcessor(renderer=screen), priority=2)
 
 def drawTextCentred(font, text, color, surface, x, y):
     textobj = font.render(text, 1, color)

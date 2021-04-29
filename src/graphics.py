@@ -33,7 +33,6 @@ class TileMapProcessor(esper.Processor):
             #for key in tm.rects_dict:
             #    color += 100
             #    for value in tm.rects_dict[key]:
-            #
             #         pygame.draw.rect(self.renderer, (0,color,0), value)
 
 class CameraProcessor(esper.Processor):
@@ -75,7 +74,7 @@ class RenderProcessor(esper.Processor):
 
             self.renderer.blit(rot_spr, rot_rect)
 
-            #pygame.draw.rect(self.renderer, (255, 0, 0), [car_pos.x, car_pos.y, 70, 120])
+            #pygame.draw.rect(self.renderer, (255, 0, 0), [car_pos.x-35, car_pos.y-60, 70, 120])
 
             #ms = pygame.mask.from_surface(rot_spr)
             #msr = ms.outline()
@@ -87,4 +86,18 @@ class RenderProcessor(esper.Processor):
             #a = pygame.Rect(x+pos.posV.x-cam.posV.x+30, y+pos.posV.y-cam.posV.y+55, 10, 10)
             #pygame.draw.rect(self.renderer, (255,0,0), a)
 
+class RenderObjectsProcessor(esper.Processor):
 
+    def __init__(self, renderer):
+        super().__init__()
+        self.renderer = renderer
+
+    def process(self):
+        cam = self.world.component_for_entity(2, com.Camera)
+        for ent, (spr, loc, ang, col) in self.world.get_components(com.Sprite, com.Location, com.Angle, com.ObjectCollisions):
+            rot_spr = pygame.transform.rotate(spr.sprite, ang.angle)
+            rot_rect = rot_spr.get_rect(center = spr.sprite.get_rect(topleft = [loc.x-cam.posV.x, loc.y-cam.posV.y]).center)
+            col.rect = rot_spr.get_rect()
+            col.rect.x = loc.x-cam.posV.x
+            col.rect.y = loc.y-cam.posV.y
+            self.renderer.blit(rot_spr, rot_rect)

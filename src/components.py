@@ -35,6 +35,10 @@ class Direction:
     def __init__(self, initV, angle):
         self.dirV = pygame.math.Vector2(initV).normalize()
 
+class Angle:
+    def __init__(self, angle):
+        self.angle = angle
+
 class Chassis:
     def __init__(self, wheelbase, cg_front_axle, cg_rear_axle, cg_height, mass, length, width, wheel_diameter, wheel_width, brake_power):
         self.wheelbase = wheelbase
