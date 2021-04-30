@@ -1,14 +1,31 @@
-
-import esper
-import pygame
-import components as com
-import constants
-import numpy as np
-import math
-import pytmx
-import random
+# Imports
+# General libraries
+import sys
 import time
-from collections import defaultdict
+import random
+import math
+import numpy as np
+from scipy import interpolate
+
+# Game related libraries
+import pygame
+from pygame.locals import *
+from pygame.joystick import *
+import esper
+import pytmx
+
+# My files
+# ECS
+import components as com
+import processes as pro
+import carphysics as carphys
+import graphics
+import gui
+import particles
+# Other
+import functions as func
+import constants
+import world
 
 class CollisionsProcessor(esper.Processor):
     def __init__(self, renderer):
@@ -30,7 +47,27 @@ class CollisionsProcessor(esper.Processor):
             if ent != 1:
                 if car_rect.colliderect(rect.rect):
                     hit_list.append(rect.rect)
-        print(hit_list)
+
+
+class DriftProcessor(esper.Processor):
+    def __init__(self, renderer):
+        super().__init__()
+        self.renderer = renderer
+
+    def process(self):
+        car_sar = self.world.component_for_entity(1, com.Steering).sar
+        vel = self.world.component_for_entity(1, com.Velocity).velV.magnitude()
+        for ent, (pnt) in self.world.get_component(com.SinglePoints):
+            if abs(car_sar) > 0.6:
+                pnt.points += int((abs(car_sar) - 0.4) * vel*0.5 * 10)
+                #print(points)
+            else:
+                if pnt.points != 0:
+                    for ent, (tpnt) in self.world.get_component(com.TotalPoints):
+                        tpnt.points += pnt.points
+                    pnt.points = 0
+                
+
 class XXXProcessor(esper.Processor):
 
     def process(self):

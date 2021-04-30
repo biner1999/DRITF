@@ -110,14 +110,18 @@ world.add_processor(particles.AddParticlesProcessor(), priority=2)
 world.add_processor(particles.RenderParticlesProcessor(renderer=screen), priority=3)
 world.add_processor(pro.CollisionsProcessor(renderer=screen))
 
-points = world.create_entity(com.Text("0", "Arial", 40, 1), com.Surface(400, 80, (0, 0, 0, 80)), com.Location(0, 0), com.Points(0))
+tpoints = world.create_entity(com.Text("0", "Arial", 40, 1), com.Surface(400, 80, (0, 0, 0, 80)), com.Location(0, 0), com.TotalPoints())
+
+spoints = world.create_entity(com.Text("0", "Arial", 40, 1), com.Surface(400, 80, (0, 0, 0, 80)), com.Location(450, 0), com.SinglePoints())
 
 speed = world.create_entity(com.Text("0", "Arial", 70, 2), com.Surface(140, 80, (255, 140, 0, 80)), com.Location(1550, 950))
 gear = world.create_entity(com.Text("N", "Arial", 70, 2), com.Surface(100, 80, (255, 140, 0, 80)), com.Location(1700, 950))
 
 world.add_processor(gui.Gear())
 world.add_processor(gui.Speed())
-world.add_processor(gui.PointsCalculaton())
+world.add_processor(gui.TotalPointsCalculaton())
+world.add_processor(gui.SinglePointsCalculaton())
+
 world.add_processor(gui.Speedometer(renderer=screen))
 world.add_processor(gui.DisplayBoxText(renderer=screen))
 
@@ -126,6 +130,8 @@ cone = pygame.image.load("assets/cone_straight.png")
 marker = world.create_entity(com.Sprite(cone), com.Location(620, 2200), com.Angle(0), com.ObjectCollisions(), com.Rect(620, 2200, cone.get_width(), cone.get_height()))
 
 world.add_processor(graphics.RenderObjectsProcessor(renderer=screen), priority=2)
+
+world.add_processor(pro.DriftProcessor(renderer=screen))
 
 def drawTextCentred(font, text, color, surface, x, y):
     textobj = font.render(text, 1, color)

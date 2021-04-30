@@ -20,19 +20,22 @@ class AddParticlesProcessor(esper.Processor):
         sprite = self.world.component_for_entity(1, com.Sprite).sprite
         car_ang = self.world.component_for_entity(1, com.Steering).heading
         cam_pos = self.world.component_for_entity(2, com.Camera).posV
+        car_sar = self.world.component_for_entity(1, com.Steering).sar
+        if abs(car_sar) > 0.6:
+            for ent, (par) in self.world.get_component(com.Particles):
+                radius = math.sqrt(sprite.get_rect().center[0]**2 + sprite.get_rect().center[1]**2)-15
 
-        for ent, (par) in self.world.get_component(com.Particles):
-            radius = math.sqrt(sprite.get_rect().center[0]**2 + sprite.get_rect().center[1]**2)-15
+                x = radius*math.sin(math.pi+par.angle_offset+car_ang)
+                y = radius*math.cos(math.pi+par.angle_offset+car_ang)
 
-            x = radius*math.sin(math.pi+par.angle_offset+car_ang)
-            y = radius*math.cos(math.pi+par.angle_offset+car_ang)
+                x_src = int(x+car_pos.x-cam_pos.x+30)
+                y_src = int(y+car_pos.y-cam_pos.y+55)
 
-            x_src = int(x+car_pos.x-cam_pos.x+30)
-            y_src = int(y+car_pos.y-cam_pos.y+55)
-
-            for i in range(5):
-                r = random.randrange(110,150)
-                par.particles.append([[x_src, y_src], r, 200, car_ang])
+                for i in range(5):
+                    r = random.randrange(110,150)
+                    par.particles.append([[x_src, y_src], r, 200, car_ang])
+        else:
+            pass
 
         """
             for i in range(10):

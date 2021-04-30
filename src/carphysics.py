@@ -221,7 +221,10 @@ class SteeringProcessor(esper.Processor):
             yawSpeedRear = -cha.cg_rear_axle * ster.yawRate
 
             slipAngleFront = math.atan2(cvelo.velV.y + yawSpeedFront, abs(cvelo.velV.x)) - np.sign(cvelo.velV.x) * ster.steer_angle
+            #print("F " + str(slipAngleFront))
             slipAngleRear  = math.atan2(cvelo.velV.y + yawSpeedRear,  abs(cvelo.velV.x))
+            ster.sar = slipAngleRear
+            #print("R " + str(slipAngleRear))
 
             ster.fff = np.clip(-5*slipAngleFront, -2, 2) * cha.weight_front_dynamic
             ster.ffr = np.clip(-5.2*slipAngleRear, -2, 2) * cha.weight_rear_dynamic

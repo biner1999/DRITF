@@ -67,17 +67,23 @@ class Gear(esper.Processor):
             else:
                 gear = str(gear_no - 1)
             
-            self.world.component_for_entity(7, com.Text).text = gear
+            self.world.component_for_entity(8, com.Text).text = gear
 
 class Speed(esper.Processor):
     def process(self):
         for ent, (spd) in self.world.get_component(com.Velocity):
-            self.world.component_for_entity(6, com.Text).text = str(int(spd.velV.magnitude()*3.6))
+            self.world.component_for_entity(7, com.Text).text = str(int(spd.velV.magnitude()*3.6))
 
-class PointsCalculaton(esper.Processor):
+class TotalPointsCalculaton(esper.Processor):
     
     def process(self):
-        for ent, (points, txt) in self.world.get_components(com.Points, com.Text):
-            points.points = 10000000
+        for ent, (points, txt) in self.world.get_components(com.TotalPoints, com.Text):
 
             txt.text = "{:,}".format(points.points)
+
+class SinglePointsCalculaton(esper.Processor):
+    
+    def process(self):
+        for ent, (points, txt) in self.world.get_components(com.SinglePoints, com.Text):
+
+            txt.text = ("+" + "{:,}".format(points.points))

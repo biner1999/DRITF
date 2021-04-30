@@ -95,6 +95,7 @@ class Steering:
         self.fff = 0
         self.ffr = 0
         self.yawRate = 0
+        self.sar = 0
 
 class TileMap:
     def __init__(self, tilemap):
@@ -162,9 +163,13 @@ class Location:
         self.y = y
 
 
-class Points:
-    def __init__(self, points):
-        self.points = points
+class TotalPoints:
+    def __init__(self):
+        self.points = 0
+
+class SinglePoints:
+    def __init__(self):
+        self.points = 0
 
 class Gear:
     def __init__(self, gear):
