@@ -76,7 +76,7 @@ world.add_component(car, com.CarAcceleration())
 world.add_component(car, com.CarVelocity())
 world.add_component(car, com.Direction(initV=([0,1]), angle=0))
 
-world.add_component(car, com.Chassis(wheelbase=2.57, cg_front_axle=1.208, cg_rear_axle=1.362, cg_height=0.46, mass=1222, length=4.24, width=1.775, wheel_diameter=0.5285, wheel_width=0.15, brake_power=12000))
+world.add_component(car, com.Chassis(wheelbase=2.57, cg_front_axle=1.208, cg_rear_axle=1.362, cg_height=0.46, mass=1222, length=4.24, width=1.775, wheel_diameter=0.5285, wheel_width=0.15, brake_power=12000, ebrake_power=5000))
 world.add_component(car, com.Engine(torque_curve=torque_curve, idle=700, rev_limit=7499, rpm=2000))
 world.add_component(car, com.GearBox(4.100, -3.437, 3.626, 2.188, 1.541, 1.213, 1.000, 0.767))
 world.add_component(car, com.ForwardForce())

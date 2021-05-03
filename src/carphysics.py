@@ -29,6 +29,8 @@ class RPMTorqueProcessor(esper.Processor):
             # Calculates the torque
             if eng.rpm >= eng.idle and eng.rpm < eng.rev_limit:
                 eng.torque = eng.torque_curve[int(eng.rpm) - eng.idle]
+                if cha.ebrake == 1:
+                    eng.torque = 0
             else:
                 eng.torque = 0
 
@@ -46,7 +48,9 @@ class FForceProcessor(esper.Processor):
             # Calculates the wheel torque from engine torque and throttle
             torque = (eng.throttle * eng.torque) * (grb.rear_diff * grb.gear_ratios[grb.current_gear])
 
-            ff.forward_force = torque / cha.wheel_radius  - cha.brake*cha.brake_power*np.sign(cvelo.velV.x)
+            total_brake = min(cha.brake*cha.brake_power + cha.ebrake*cha.ebrake_power, cha.brake_power)
+
+            ff.forward_force = torque / cha.wheel_radius  - total_brake*np.sign(cvelo.velV.x)
             ff.sideway_force = 0
 
 class AccelerationProcessor(esper.Processor):
@@ -226,8 +230,11 @@ class SteeringProcessor(esper.Processor):
             ster.sar = slipAngleRear
             #print("R " + str(slipAngleRear))
 
-            ster.fff = np.clip(-5*slipAngleFront, -2, 2) * cha.weight_front_dynamic
-            ster.ffr = np.clip(-5.2*slipAngleRear, -2, 2) * cha.weight_rear_dynamic
+            tire_grip_front = cha.tire_grip
+            tire_grip_rear = cha.tire_grip * (1 - cha.ebrake * (1 - 0.7))
+
+            ster.fff = np.clip(-5*slipAngleFront, -tire_grip_front, tire_grip_front) * cha.weight_front_dynamic
+            ster.ffr = np.clip(-5.2*slipAngleRear, -tire_grip_front, tire_grip_front) * cha.weight_rear_dynamic
 ################################## Possibly split it down here #######################################
             angularTorque = ster.fff * cha.cg_front_axle - ster.ffr * cha.cg_rear_axle;
 

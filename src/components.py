@@ -40,7 +40,7 @@ class Angle:
         self.angle = angle
 
 class Chassis:
-    def __init__(self, wheelbase, cg_front_axle, cg_rear_axle, cg_height, mass, length, width, wheel_diameter, wheel_width, brake_power):
+    def __init__(self, wheelbase, cg_front_axle, cg_rear_axle, cg_height, mass, length, width, wheel_diameter, wheel_width, brake_power, ebrake_power):
         self.wheelbase = wheelbase
         self.cg_front_axle = cg_front_axle
         self.cg_rear_axle = cg_rear_axle
@@ -58,9 +58,12 @@ class Chassis:
         self.brake = 0
         self.ebrake = 0
         self.brake_power = brake_power
+        self.ebrake_power = ebrake_power
         self.wheel_diameter = wheel_diameter
         self.wheel_radius = self.wheel_diameter/2
         self.wheel_width = wheel_width
+
+        self.tire_grip = 2
 
 class Engine:
     def __init__(self, torque_curve, idle, rev_limit, rpm):
