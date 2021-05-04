@@ -62,6 +62,10 @@ class Chassis:
         self.wheel_diameter = wheel_diameter
         self.wheel_radius = self.wheel_diameter/2
         self.wheel_width = wheel_width
+        self.friction_front_left = 0
+        self.friction_front_right = 0
+        self.friction_rear_left = 0
+        self.friction_rear_right = 0
 
         self.tire_grip = 2
 

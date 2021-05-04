@@ -50,6 +50,9 @@ class FForceProcessor(esper.Processor):
 
             total_brake = min(cha.brake*cha.brake_power + cha.ebrake*cha.ebrake_power, cha.brake_power)
 
+            if(velo.velV.magnitude() < 0.5 and eng.throttle == 0):
+                total_brake = 0
+
             ff.forward_force = torque / cha.wheel_radius  - total_brake*np.sign(cvelo.velV.x)
             ff.sideway_force = 0
 
@@ -63,9 +66,10 @@ class AccelerationProcessor(esper.Processor):
             drag_force_y = -constants.RR_COEFF * cvelo.velV.y - constants.DRAG_COEFF * cvelo.velV.y * abs(cvelo.velV.y);
 
             total_force_x = ff.forward_force + drag_force_x
-            total_force_y = ff.sideway_force + drag_force_y + math.cos(ster.steer_angle) * ster.fff + ster.ffr
-
-            #print(total_force_x)
+            total_force_y = ff.sideway_force + drag_force_y + math.cos(ster.steer_angle) * (ster.friction_front_left + ster.friction_front_right) + (ster.friction_rear_left + ster.friction_rear_right)
+            if(velo.velV.magnitude() < 0.5 and eng.throttle == 0):
+                total_force_x = 0
+                total_force_y = 0
             
             #print(velo.velV.y)
             caccel.accV.x = total_force_x / cha.mass
@@ -216,10 +220,10 @@ class SteeringProcessor(esper.Processor):
             cvelo.velV.x = ster.cs * velo.velV.y + ster.sn * velo.velV.x
             cvelo.velV.y = ster.cs * velo.velV.x - ster.sn * velo.velV.y
 
-            transferX = (cha.cg_height/cha.wheelbase)*caccel.accV.x
-
-            cha.weight_front_dynamic = cha.mass * (cha.cg_rear_axle/cha.wheelbase * constants.GRAVITY - caccel.accV.x * cha.cg_height/cha.wheelbase)
-            cha.weight_rear_dynamic = cha.mass * (cha.cg_rear_axle/cha.wheelbase * constants.GRAVITY + caccel.accV.x * cha.cg_height/cha.wheelbase)
+            weight_front_left = cha.mass*(cha.cg_rear_axle/cha.wheelbase*0.5 * constants.GRAVITY - caccel.accV.x * cha.cg_height/cha.wheelbase - caccel.accV.y * cha.cg_height/(cha.width-cha.wheel_width))
+            weight_front_right = cha.mass*(cha.cg_rear_axle/cha.wheelbase*0.5 * constants.GRAVITY - caccel.accV.x * cha.cg_height/cha.wheelbase + caccel.accV.y * cha.cg_height/(cha.width-cha.wheel_width))
+            weight_rear_left = cha.mass*(cha.cg_rear_axle/cha.wheelbase*0.5 * constants.GRAVITY + caccel.accV.x * cha.cg_height/cha.wheelbase - caccel.accV.y * cha.cg_height/(cha.width-cha.wheel_width))
+            weight_rear_right = cha.mass*(cha.cg_rear_axle/cha.wheelbase*0.5 * constants.GRAVITY + caccel.accV.x * cha.cg_height/cha.wheelbase + caccel.accV.y * cha.cg_height/(cha.width-cha.wheel_width))
 
             yawSpeedFront = cha.cg_front_axle * ster.yawRate
             yawSpeedRear = -cha.cg_rear_axle * ster.yawRate
@@ -233,16 +237,26 @@ class SteeringProcessor(esper.Processor):
             tire_grip_front = cha.tire_grip
             tire_grip_rear = cha.tire_grip * (1 - cha.ebrake * (1 - 0.7))
 
-            ster.fff = np.clip(-5*slipAngleFront, -tire_grip_front, tire_grip_front) * cha.weight_front_dynamic
-            ster.ffr = np.clip(-5.2*slipAngleRear, -tire_grip_front, tire_grip_front) * cha.weight_rear_dynamic
-################################## Possibly split it down here #######################################
-            angularTorque = ster.fff * cha.cg_front_axle - ster.ffr * cha.cg_rear_axle;
 
-            if(velo.velV.magnitude() < 1 and eng.throttle == 0):
+            ster.friction_front_left = np.clip(-5*slipAngleFront, -tire_grip_front, tire_grip_front) * weight_front_left
+            ster.friction_front_right = np.clip(-5*slipAngleFront, -tire_grip_front, tire_grip_front) * weight_front_right
+            ster.friction_rear_left = np.clip(-5.2*slipAngleRear, -tire_grip_rear, tire_grip_rear) * weight_rear_left
+            ster.friction_rear_right = np.clip(-5.2*slipAngleRear, -tire_grip_rear, tire_grip_rear) * weight_rear_right
+################################## Possibly split it down here #######################################
+            angularTorque = (ster.friction_front_left + ster.friction_front_right) * cha.cg_front_axle - (ster.friction_rear_left + ster.friction_rear_right) * cha.cg_rear_axle;
+
+            if(velo.velV.magnitude() < 0.5 and eng.throttle == 0):
+                cvelo.velV.y = 0
+                cvelo.velV.x = 0
                 velo.velV.y = 0
                 velo.velV.x = 0
+                accel.accV.y = 0
+                accel.accV.x = 0
+                caccel.accV.y = 0
+                caccel.accV.x = 0
                 angularTorque = 0
                 ster.yawRate = 0
+
 
             angularAccel = angularTorque / cha.inertia
 
