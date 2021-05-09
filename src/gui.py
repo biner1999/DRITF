@@ -38,9 +38,10 @@ class DisplayBoxText(esper.Processor):
 
 class Speedometer(esper.Processor):
 
-    def __init__(self, renderer):
+    def __init__(self, renderer, car):
         super().__init__()
         self.renderer = renderer
+        self.car = car
     
     def process(self):
         s = pygame.Surface((500, 250), pygame.SRCALPHA)
@@ -50,13 +51,17 @@ class Speedometer(esper.Processor):
         pygame.draw.arc(self.renderer, (215, 108, 0), a, 0.5, 2.64, 30)
         pygame.draw.arc(self.renderer, (165, 0, 0), a, 0.5, 1, 30)
 
-        oldr = self.world.component_for_entity(1, com.Engine).rev_limit
+        oldr = self.world.component_for_entity(self.car, com.Engine).rev_limit
         newr = 0.5-2.64
-        newv = (((self.world.component_for_entity(1, com.Engine).rpm)*newr)/oldr) + 2.64
+        newv = (((self.world.component_for_entity(self.car, com.Engine).rpm)*newr)/oldr) + 2.64
         pygame.draw.arc(self.renderer, (255, 178, 0), a, newv, 2.64, 30)
 
 
 class Gear(esper.Processor):
+    def __init__(self, gear):
+        super().__init__()
+        self.gear = gear
+
     def process(self):
         for ent, (grbox) in self.world.get_component(com.GearBox):
             gear_no = grbox.current_gear
@@ -67,12 +72,16 @@ class Gear(esper.Processor):
             else:
                 gear = str(gear_no - 1)
             
-            self.world.component_for_entity(8, com.Text).text = gear
+            self.world.component_for_entity(self.gear, com.Text).text = gear
 
 class Speed(esper.Processor):
+    def __init__(self, speed):
+        super().__init__()
+        self.speed = speed
+
     def process(self):
         for ent, (spd) in self.world.get_component(com.Velocity):
-            self.world.component_for_entity(7, com.Text).text = str(int(spd.velV.magnitude()*3.6))
+            self.world.component_for_entity(self.speed, com.Text).text = str(int(spd.velV.magnitude()*3.6))
 
 class TotalPointsCalculaton(esper.Processor):
     
@@ -87,3 +96,12 @@ class SinglePointsCalculaton(esper.Processor):
         for ent, (points, txt) in self.world.get_components(com.SinglePoints, com.Text):
 
             txt.text = ("+" + "{:,}".format(points.points))
+
+class Timer(esper.Processor):
+
+    def process(self):
+        for ent, (tme, dt, txt) in self.world.get_components(com.Time, com.DeltaTime, com.Text):
+            tme.time -= dt.dt
+            txt.text = str(math.ceil(tme.time))
+            if tme.time <= 0:
+                pass # Turn the loop off

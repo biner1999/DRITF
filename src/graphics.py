@@ -37,13 +37,14 @@ class TileMapProcessor(esper.Processor):
 
 class CameraProcessor(esper.Processor):
 
-    def __init__(self, renderer):
+    def __init__(self, renderer, car):
         super().__init__()
         self.renderer = renderer
+        self.car = car
 
     def process(self):
-        car_pos = self.world.component_for_entity(1, com.Position).posV*28
-        sprite = self.world.component_for_entity(1, com.Sprite).sprite
+        car_pos = self.world.component_for_entity(self.car, com.Position).posV*constants.SCALE
+        sprite = self.world.component_for_entity(self.car, com.Sprite).sprite
         for ent, (tm, cam) in self.world.get_components(com.TileMap, com.Camera):
             tx = cam.posV.x
             ty = cam.posV.y
@@ -60,16 +61,18 @@ class CameraProcessor(esper.Processor):
 
 class RenderProcessor(esper.Processor):
 
-    def __init__(self, renderer):
+    def __init__(self, renderer, car, tilemap):
         super().__init__()
         self.renderer = renderer
+        self.car = car
+        self.tilemap = tilemap
 
     def process(self):
-        cam = self.world.component_for_entity(2, com.Camera)
-        car_pos = self.world.component_for_entity(1, com.Position).posV*28
+        cam = self.world.component_for_entity(self.tilemap, com.Camera)
+        car_pos = self.world.component_for_entity(self.car, com.Position).posV*constants.SCALE
         for ent, (spr, pos, stre, col) in self.world.get_components(com.Sprite, com.Position, com.Steering, com.ObjectCollisions):
             rot_spr = pygame.transform.rotate(spr.sprite, math.degrees(stre.heading)-180)
-            rot_rect = rot_spr.get_rect(center = spr.sprite.get_rect(topleft = [pos.posV.x*28-cam.posV.x, pos.posV.y*28-cam.posV.y]).center)
+            rot_rect = rot_spr.get_rect(center = spr.sprite.get_rect(topleft = [pos.posV.x*constants.SCALE-cam.posV.x, pos.posV.y*constants.SCALE-cam.posV.y]).center)
             col.rect = rot_spr.get_rect()
 
             self.renderer.blit(rot_spr, rot_rect)
@@ -88,12 +91,13 @@ class RenderProcessor(esper.Processor):
 
 class RenderObjectsProcessor(esper.Processor):
 
-    def __init__(self, renderer):
+    def __init__(self, renderer, tilemap):
         super().__init__()
         self.renderer = renderer
+        self.tilemap = tilemap
 
     def process(self):
-        cam = self.world.component_for_entity(2, com.Camera)
+        cam = self.world.component_for_entity(self.tilemap, com.Camera)
         for ent, (spr, loc, ang, col) in self.world.get_components(com.Sprite, com.Location, com.Angle, com.ObjectCollisions):
             rot_spr = pygame.transform.rotate(spr.sprite, ang.angle)
             rot_rect = rot_spr.get_rect(center = spr.sprite.get_rect(topleft = [loc.x-cam.posV.x, loc.y-cam.posV.y]).center)
