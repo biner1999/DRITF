@@ -1,26 +1,74 @@
+import numpy as np
+import math
 
 import esper
 import pygame
-import components as com
-import constants
-import numpy as np
-import math
-import pytmx
-import random
-import time
-from collections import defaultdict
+from components import components as com
+from other import constants
 
-class TestProcessor(esper.Processor):
+class SteeringProcessor(esper.Processor):
 
     def process(self):
-        for ent, (accel, dire, velo, ff, eng, grb, cha, dt, ster, caccel, cvelo, pos) in self.world.get_components(com.Acceleration, com.Direction, com.Velocity, com.ForwardForce, com.Engine, com.GearBox, com.Chassis, com.DeltaTime, com.Steering, com.CarAcceleration, com.CarVelocity, com.Position):
-            pass
+        for ent, (ster, velo, cvelo, accel, caccel, cha, dt, eng) in self.world.get_components(com.Steering, com.Velocity, com.CarVelocity, com.Acceleration, com.CarAcceleration, com.Chassis, com.DeltaTime, com.Engine):
+            ster.sn = math.sin(ster.heading)
+            ster.cs = math.cos(ster.heading)
 
+            cvelo.velV.x = ster.cs * velo.velV.y + ster.sn * velo.velV.x
+            cvelo.velV.y = ster.cs * velo.velV.x - ster.sn * velo.velV.y
+
+            weight_front_left = cha.mass[0]*(cha.cg_rear_axle/cha.wheelbase*0.5 * constants.GRAVITY - caccel.accV.x * cha.cg_height[0]/cha.wheelbase - caccel.accV.y * cha.cg_height[0]/(cha.width-cha.wheel_width))
+            weight_front_right = cha.mass[0]*(cha.cg_rear_axle/cha.wheelbase*0.5 * constants.GRAVITY - caccel.accV.x * cha.cg_height[0]/cha.wheelbase + caccel.accV.y * cha.cg_height[0]/(cha.width-cha.wheel_width))
+            weight_rear_left = cha.mass[0]*(cha.cg_rear_axle/cha.wheelbase*0.5 * constants.GRAVITY + caccel.accV.x * cha.cg_height[0]/cha.wheelbase - caccel.accV.y * cha.cg_height[0]/(cha.width-cha.wheel_width))
+            weight_rear_right = cha.mass[0]*(cha.cg_rear_axle/cha.wheelbase*0.5 * constants.GRAVITY + caccel.accV.x * cha.cg_height[0]/cha.wheelbase + caccel.accV.y * cha.cg_height[0]/(cha.width-cha.wheel_width))
+
+            yawSpeedFront = cha.cg_front_axle * ster.yawRate
+            yawSpeedRear = -cha.cg_rear_axle * ster.yawRate
+
+            slipAngleFront = math.atan2(cvelo.velV.y + yawSpeedFront, abs(cvelo.velV.x)) - np.sign(cvelo.velV.x) * ster.steer_angle
+            #print("F " + str(slipAngleFront))
+            slipAngleRear  = math.atan2(cvelo.velV.y + yawSpeedRear,  abs(cvelo.velV.x))
+            #print(slipAngleRear)
+            #print(math.atan2(cvelo.velV.y,  abs(cvelo.velV.x)))
+            ster.sar = slipAngleRear
+            #ster.sa = math.atan2(cvelo.velV.y,  abs(cvelo.velV.x))
+            #print("R " + str(slipAngleRear))
+
+            tire_grip_front = cha.tire_grip
+            tire_grip_rear = cha.tire_grip * (1 - cha.ebrake * (1 - 0.7))
+
+
+            ster.friction_front_left = np.clip(-5*slipAngleFront, -tire_grip_front, tire_grip_front) * weight_front_left
+            ster.friction_front_right = np.clip(-5*slipAngleFront, -tire_grip_front, tire_grip_front) * weight_front_right
+            ster.friction_rear_left = np.clip(-5.2*slipAngleRear, -tire_grip_rear, tire_grip_rear) * weight_rear_left
+            ster.friction_rear_right = np.clip(-5.2*slipAngleRear, -tire_grip_rear, tire_grip_rear) * weight_rear_right
+
+################################## Possibly split it down here #######################################
+            angularTorque = (ster.friction_front_left + ster.friction_front_right) * cha.cg_front_axle - (ster.friction_rear_left + ster.friction_rear_right) * cha.cg_rear_axle;
+
+            if(velo.velV.magnitude() < 0.5 and (eng.throttle == 0 or cha.brake > 0.8 or cha.ebrake == 1)):
+                cvelo.velV.y = 0
+                cvelo.velV.x = 0
+                velo.velV.y = 0
+                velo.velV.x = 0
+                accel.accV.y = 0
+                accel.accV.x = 0
+                caccel.accV.y = 0
+                caccel.accV.x = 0
+                angularTorque = 0
+                ster.yawRate = 0
+
+
+            angularAccel = angularTorque / cha.inertia
+
+            ster.yawRate += angularAccel * dt.dt
+            if(velo.velV.magnitude() < 1 and ster.steer_angle < 0.05):
+                ster.yawRate = 0
+            ster.heading += ster.yawRate * dt.dt
 
 class FForceProcessor(esper.Processor):
 
     def process(self):
-        for ent, (accel, dire, velo, ff, eng, grb, cha, dt, cvelo) in self.world.get_components(com.Acceleration, com.Direction, com.Velocity, com.ForwardForce, com.Engine, com.GearBox, com.Chassis, com.DeltaTime, com.CarVelocity):
+        for ent, (velo, ff, eng, grb, cha, cvelo) in self.world.get_components(com.Velocity, com.ForwardForce, com.Engine, com.GearBox, com.Chassis, com.CarVelocity):
             # Calculates the wheel torque from engine torque and throttle
             if grb.gear_ratios[grb.current_gear] == 0 or grb.clutch == True:
                 torque = 0
@@ -38,7 +86,7 @@ class FForceProcessor(esper.Processor):
 class AccelerationProcessor(esper.Processor):
 
     def process(self):
-        for ent, (ster, accel, caccel, dire, velo, cvelo, ff, eng, grb, cha, dt) in self.world.get_components(com.Steering, com.Acceleration, com.CarAcceleration, com.Direction, com.Velocity, com.CarVelocity, com.ForwardForce, com.Engine, com.GearBox, com.Chassis, com.DeltaTime):            
+        for ent, (ster, accel, caccel, velo, cvelo, ff, eng, cha) in self.world.get_components(com.Steering, com.Acceleration, com.CarAcceleration, com.Velocity, com.CarVelocity, com.ForwardForce, com.Engine, com.Chassis):            
             # Resistance and total force as well as  acceleration
 
             drag_force_x = -constants.RR_COEFF * cvelo.velV.x - constants.DRAG_COEFF * cvelo.velV.x * abs(cvelo.velV.x);
@@ -60,7 +108,7 @@ class AccelerationProcessor(esper.Processor):
 class VelocityProcessor(esper.Processor):
 
     def process(self):
-        for ent, (accel, dire, velo, ff, eng, grb, cha, dt) in self.world.get_components(com.Acceleration, com.Direction, com.Velocity, com.ForwardForce, com.Engine, com.GearBox, com.Chassis, com.DeltaTime):
+        for ent, (accel, velo, dt) in self.world.get_components(com.Acceleration, com.Velocity, com.DeltaTime):
             # Velocity
             velo.velV.x += accel.accV.x * dt.dt
             velo.velV.y += accel.accV.y * dt.dt
@@ -81,7 +129,7 @@ class PositionProcessor(esper.Processor):
 class RPMTorqueProcessor(esper.Processor):
 
     def process(self):
-        for ent, (accel, dire, velo, ff, eng, grb, cha, dt, cvelo) in self.world.get_components(com.Acceleration, com.Direction, com.Velocity, com.ForwardForce, com.Engine, com.GearBox, com.Chassis, com.DeltaTime, com.CarVelocity):
+        for ent, (eng, grb, cha, dt, cvelo) in self.world.get_components(com.Engine, com.GearBox, com.Chassis, com.DeltaTime, com.CarVelocity):
 
             if grb.gear_ratios[grb.current_gear] == 0 or grb.clutch == True:
                 # Manages the idle RPM
@@ -164,7 +212,7 @@ class RPMTorqueProcessor(esper.Processor):
             elif eng.rpm > eng.rev_limit:
                 eng.rpm = eng.rev_limit
 """
-
+"""
 class DrivetrainProcessor(esper.Processor):
     def process(self):
             if grb.clutch == False:
@@ -202,6 +250,8 @@ class DrivetrainProcessor(esper.Processor):
             else:
                 fly_clutch_speed = (eng_momentum + trans_momentum)/(eng_inertia + trans_inertia)
                 wheel_speed = (fly_clutch_speed * constants.RADS_to_RPM * cha.wheel_diameter/2) / (grb.rear_diff[0] * grb.gear_ratio) * constants.RPM_to_RADS
+
+                
 class RPMProcessor(esper.Processor):
     def process(self):
         for ent, (eng, grb, cha, velo, dt) in self.world.get_components(com.Engine, com.GearBox, com.Chassis, com.Velocity, com.DeltaTime):
@@ -244,7 +294,7 @@ class RPMProcessor(esper.Processor):
                 #eng.rpm = wheel_speed * ratio * constants.RADS_to_RPM
                 #wheel_speed = (3.6 * eng.rpm * cha.wheel_diameter/2)/(grb.rear_diff[0] * grb.gear_ratios[grb.current_gear]) * constants.RPM_to_RADS
                 #print(wheel_speed)
-                """
+                
                 eng_ang_vel = eng.rpm * constants.RPM_to_RADS
                 eng_ang_acc = (eng_torque - eng_friction_torque ) / 0.5
 
@@ -264,8 +314,8 @@ class RPMProcessor(esper.Processor):
                 else:
                     eng.rpm = temp_rpm
                 #print(eng.rpm)
-                """
-                """
+                
+                
 class RPMTorqueProcessor(esper.Processor):
 
     def process(self):
@@ -290,8 +340,8 @@ class RPMTorqueProcessor(esper.Processor):
                 eng.rpm = eng.idle
             elif eng.rpm > eng.rev_limit:
                 eng.rpm = eng.rev_limit
-                """
-"""
+                
+
 class RPMProcessor(esper.Processor):
 
     def process(self):
@@ -331,62 +381,3 @@ class RPMProcessor(esper.Processor):
                 fly_clutch_speed = (eng_momentum + trans_momentum)/(eng_inertia + trans_inertia)
                 wheel_speed = (fly_clutch_speed * constants.RADS_to_RPM * cha.wheel_diameter/2) / (grb.rear_diff[0] * grb.gear_ratio) * constants.RPM_to_RADS
 """
-
-class SteeringProcessor(esper.Processor):
-
-    def process(self):
-        for ent, (ster, velo, cvelo, accel, caccel, cha, dt, ff, eng) in self.world.get_components(com.Steering, com.Velocity, com.CarVelocity, com.Acceleration, com.CarAcceleration, com.Chassis, com.DeltaTime, com.ForwardForce, com.Engine):
-            ster.sn = math.sin(ster.heading)
-            ster.cs = math.cos(ster.heading)
-
-            cvelo.velV.x = ster.cs * velo.velV.y + ster.sn * velo.velV.x
-            cvelo.velV.y = ster.cs * velo.velV.x - ster.sn * velo.velV.y
-
-            weight_front_left = cha.mass[0]*(cha.cg_rear_axle/cha.wheelbase*0.5 * constants.GRAVITY - caccel.accV.x * cha.cg_height[0]/cha.wheelbase - caccel.accV.y * cha.cg_height[0]/(cha.width-cha.wheel_width))
-            weight_front_right = cha.mass[0]*(cha.cg_rear_axle/cha.wheelbase*0.5 * constants.GRAVITY - caccel.accV.x * cha.cg_height[0]/cha.wheelbase + caccel.accV.y * cha.cg_height[0]/(cha.width-cha.wheel_width))
-            weight_rear_left = cha.mass[0]*(cha.cg_rear_axle/cha.wheelbase*0.5 * constants.GRAVITY + caccel.accV.x * cha.cg_height[0]/cha.wheelbase - caccel.accV.y * cha.cg_height[0]/(cha.width-cha.wheel_width))
-            weight_rear_right = cha.mass[0]*(cha.cg_rear_axle/cha.wheelbase*0.5 * constants.GRAVITY + caccel.accV.x * cha.cg_height[0]/cha.wheelbase + caccel.accV.y * cha.cg_height[0]/(cha.width-cha.wheel_width))
-
-            yawSpeedFront = cha.cg_front_axle * ster.yawRate
-            yawSpeedRear = -cha.cg_rear_axle * ster.yawRate
-
-            slipAngleFront = math.atan2(cvelo.velV.y + yawSpeedFront, abs(cvelo.velV.x)) - np.sign(cvelo.velV.x) * ster.steer_angle
-            #print("F " + str(slipAngleFront))
-            slipAngleRear  = math.atan2(cvelo.velV.y + yawSpeedRear,  abs(cvelo.velV.x))
-            #print(slipAngleRear)
-            #print(math.atan2(cvelo.velV.y,  abs(cvelo.velV.x)))
-            ster.sar = slipAngleRear
-            ster.sa = math.atan2(cvelo.velV.y,  abs(cvelo.velV.x))
-            #print("R " + str(slipAngleRear))
-
-            tire_grip_front = cha.tire_grip
-            tire_grip_rear = cha.tire_grip * (1 - cha.ebrake * (1 - 0.7))
-
-
-            ster.friction_front_left = np.clip(-5*slipAngleFront, -tire_grip_front, tire_grip_front) * weight_front_left
-            ster.friction_front_right = np.clip(-5*slipAngleFront, -tire_grip_front, tire_grip_front) * weight_front_right
-            ster.friction_rear_left = np.clip(-5.2*slipAngleRear, -tire_grip_rear, tire_grip_rear) * weight_rear_left
-            ster.friction_rear_right = np.clip(-5.2*slipAngleRear, -tire_grip_rear, tire_grip_rear) * weight_rear_right
-
-################################## Possibly split it down here #######################################
-            angularTorque = (ster.friction_front_left + ster.friction_front_right) * cha.cg_front_axle - (ster.friction_rear_left + ster.friction_rear_right) * cha.cg_rear_axle;
-
-            if(velo.velV.magnitude() < 0.5 and (eng.throttle == 0 or cha.brake > 0.8 or cha.ebrake == 1)):
-                cvelo.velV.y = 0
-                cvelo.velV.x = 0
-                velo.velV.y = 0
-                velo.velV.x = 0
-                accel.accV.y = 0
-                accel.accV.x = 0
-                caccel.accV.y = 0
-                caccel.accV.x = 0
-                angularTorque = 0
-                ster.yawRate = 0
-
-
-            angularAccel = angularTorque / cha.inertia
-
-            ster.yawRate += angularAccel * dt.dt
-            if(velo.velV.magnitude() < 1 and ster.steer_angle < 0.05):
-                ster.yawRate = 0
-            ster.heading += ster.yawRate * dt.dt

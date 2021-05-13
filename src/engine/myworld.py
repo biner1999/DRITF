@@ -1,9 +1,5 @@
 # Imports
 # General libraries
-import sys
-import time
-import random
-import math
 import numpy as np
 from scipy import interpolate
 
@@ -16,16 +12,15 @@ import pytmx
 
 # My files
 # ECS
-import components as com
-import processes as pro
-import carphysics as carphys
-import graphics
-import gui
-import particles
-import states as sta
+from components import components as com
+from systems import processes as pro
+from systems import carphysics as carphys
+from systems import graphics
+from systems import gui
+from systems import particles
+from engine import states as sta
 # Other
-import functions as func
-import constants
+from other import constants
 
 class MyWorld():
     def __init__(self, screen):
@@ -105,7 +100,7 @@ class MyWorld():
 
         world.add_component(car, com.Sprite(sprite=img))
 
-        world.add_component(car, com.Position(initV=([960/constants.SCALE, 540/constants.SCALE])))
+        world.add_component(car, com.Position(initV=([430/constants.SCALE, 1190/constants.SCALE])))
         world.add_component(car, com.Velocity())
         world.add_component(car, com.Acceleration())
         world.add_component(car, com.CarAcceleration())
@@ -118,7 +113,7 @@ class MyWorld():
         world.add_component(car, com.ForwardForce())
         world.add_component(car, com.Steering(35))
         world.add_component(car, com.ObjectCollisions())
-        world.add_component(car, com.Rect(960, 540, img.get_width(), img.get_height()))
+        world.add_component(car, com.Rect(430, 1190, img.get_width(), img.get_height()))
 
         return car
 
@@ -141,7 +136,7 @@ class MyWorld():
 
         speed = world.create_entity(com.Text("0", "Arial", 70, 2), com.Surface(140, 80, (255, 140, 0, 80)), com.Location(1550, 950))
         gear = world.create_entity(com.Text("N", "Arial", 70, 2), com.Surface(100, 80, (255, 140, 0, 80)), com.Location(1700, 950))
-        timer = world.create_entity(com.Text("0", "Arial", 70, 2), com.Surface(200, 80, (0, 0, 0, 80)), com.Location(1920-200,0), com.Time(time=15), com.DeltaTime())
+        timer = world.create_entity(com.Text("0", "Arial", 70, 2), com.Surface(200, 80, (0, 0, 0, 80)), com.Location(1920-200,0), com.Time(time=25), com.DeltaTime())
 
         return tpoints, spoints, speed, gear, timer
 

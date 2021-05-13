@@ -2,9 +2,9 @@
 import pygame
 from pygame.locals import *
 from pygame.joystick import *
-import myworld
-import components as com
-import constants
+from engine import myworld
+from components import components as com
+from other import constants
 import math
 
 class Engine():
@@ -13,7 +13,7 @@ class Engine():
         # Intializations of PyGame modules
         pygame.init()
         pygame.font.init()
-        pygame.joystick.Joystick(0).init()
+        pygame.joystick.init()
 
         # Joystick
         self.joysticks = [pygame.joystick.Joystick(x) 
@@ -24,14 +24,9 @@ class Engine():
         win_res = (1920, 1080)
         self.screen = pygame.display.set_mode(win_res,0,32)
 
-        # Fonts
-        #myfont = pygame.font.SysFont('Comic Sans MS', 100)
-        #mysmallfont = pygame.font.SysFont('Comic Sans MS', 50)
-
         world = myworld.MyWorld(self.screen)
 
         running = True
-        click = True
         clock = pygame.time.Clock()
 
         while running:
@@ -42,14 +37,46 @@ class Engine():
                     if event.type == pygame.QUIT:
                         running = False
                         pygame.quit()
+                    # Keyboard controls
                     if event.type == pygame.KEYDOWN:
-                        if event.key == K_RIGHT:
-                            pass
+                        if event.key == K_w:
+                            world.world.component_for_entity(1, com.Engine).throttle = 1
+                        if event.key == K_s:
+                            world.world.component_for_entity(1, com.Chassis).brake = 1
+                        if event.key == K_a:
+                            world.world.component_for_entity(1, com.Steering).steer_angle = math.radians(world.world.component_for_entity(1, com.Steering).max_angle[0])
+                        if event.key == K_d:
+                            world.world.component_for_entity(1, com.Steering).steer_angle = -math.radians(world.world.component_for_entity(1, com.Steering).max_angle[0])
+                        if event.key == K_m:
+                            if world.world.component_for_entity(1, com.GearBox).current_gear > 0:
+                                world.world.component_for_entity(1, com.GearBox).current_gear -= 1
+                        if event.key == K_k:
+                            if world.world.component_for_entity(1, com.GearBox).current_gear < world.world.component_for_entity(1, com.GearBox).no_of_gears-1:
+                                world.world.component_for_entity(1, com.GearBox).current_gear += 1
+                        if event.key == K_p:
+                            world.world.component_for_entity(1, com.GearBox).clutch = True
+                        if event.key == K_SPACE:
+                            world.world.component_for_entity(1, com.Chassis).ebrake = 1
+                        if event.key == K_ESCAPE:
+                            world.world.component_for_entity(19, com.States).current_state = "menu"
+                    if event.type == pygame.KEYUP:
+                        if event.key == K_w:
+                            world.world.component_for_entity(1, com.Engine).throttle = 0
+                        if event.key == K_s:
+                            world.world.component_for_entity(1, com.Chassis).brake = 0
+                        if event.key == K_a:
+                            world.world.component_for_entity(1, com.Steering).steer_angle = 0
+                        if event.key == K_d:
+                            world.world.component_for_entity(1, com.Steering).steer_angle = 0
+                        if event.key == K_p:
+                            world.world.component_for_entity(1, com.GearBox).clutch = False
+                        if event.key == K_SPACE:
+                            world.world.component_for_entity(1, com.Chassis).ebrake = 0
+                    # Game pad controls
                     if event.type == pygame.JOYBUTTONDOWN:
                         #Go back to main menu
                         if pygame.joystick.Joystick(0).get_button(7):
-                            pass
-                            # running = False BACK TO MENU INSTEAD
+                            world.world.component_for_entity(19, com.States).current_state = "menu"
                         #Gear down
                         if pygame.joystick.Joystick(0).get_button(4):
                             if world.world.component_for_entity(1, com.GearBox).current_gear > 0:
@@ -97,32 +124,17 @@ class Engine():
                             world.world.component_for_entity(1, com.Chassis).brake = (pygame.joystick.Joystick(0).get_axis(2) - constants.OLD_ZAXIS_MIN) * constants.RANGE_RATIO
                         if pygame.joystick.Joystick(0).get_axis(2) < -0.99:
                             world.world.component_for_entity(1, com.Chassis).brake = 0
+
             elif loaded_state == "menu" or loaded_state == "tuning":
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        running = False
-                    if event.type == pygame.MOUSEBUTTONDOWN:
-                        click = True
-                # or
+                
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         running = False
                     click = pygame.mouse.get_pressed()[0]
                 mx, my = pygame.mouse.get_pos()
+
             world.world.process()
             pygame.display.update()
             clock.tick(constants.TARGET_FRAMERATE)
-            click = False
-            #print(world.world._processors)
-"""
-                if play_button.collidepoint((mx, my)):
-                    if click:
-                        gameLoop()
-                if modify_button.collidepoint((mx, my)):
-                    if click:
-                        modifyLoop()
-"""
-
-
 
 

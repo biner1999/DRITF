@@ -16,7 +16,7 @@ import pytmx
 
 # My files
 # ECS
-import components as com
+from components import components as com
 import processes as pro
 import carphysics as carphys
 import graphics

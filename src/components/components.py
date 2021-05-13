@@ -1,5 +1,5 @@
 import pygame
-import constants
+from other import constants
 from pygame.math import *
 from collections import defaultdict
 

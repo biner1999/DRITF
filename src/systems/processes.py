@@ -16,16 +16,15 @@ import pytmx
 
 # My files
 # ECS
-import components as com
-import processes as pro
-import carphysics as carphys
-import graphics
-import gui
-import particles
+from components import components as com
+from systems import processes as pro
+from systems import carphysics as carphys
+from systems import graphics
+from systems import gui
+from systems import particles
 # Other
-import functions as func
-import constants
-import myworld
+from other import constants
+from engine import myworld
 
 class DeltaTimeProcessor(esper.Processor):
 
@@ -75,7 +74,7 @@ class DriftProcessor(esper.Processor):
         for ent, (pnt) in self.world.get_component(com.SinglePoints):
             # When the car drifts
             if abs(car_sar) > 0.5:
-                pnt.points += int((abs(car_sar) - 0.4) * vel*0.5 * 10)
+                pnt.points += int((abs(car_sar) - 0.4) * vel * 5)
             # When the drift stops
             else:
                 if pnt.points != 0:

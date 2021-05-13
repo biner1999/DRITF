@@ -1,13 +1,10 @@
+import math
+import random
+
 import esper
 import pygame
-import components as com
-import constants
-import numpy as np
-import math
-import pytmx
-import random
-import time
-from collections import defaultdict
+from components import components as com
+from other import constants
 
 class AddParticlesProcessor(esper.Processor):
 

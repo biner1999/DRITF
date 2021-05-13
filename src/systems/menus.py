@@ -1,11 +1,5 @@
 # Imports
 # General libraries
-import sys
-import time
-import random
-import math
-import numpy as np
-from scipy import interpolate
 
 # Game related libraries
 import pygame
@@ -16,15 +10,14 @@ import pytmx
 
 # My files
 # ECS
-import components as com
-import processes as pro
-import carphysics as carphys
-import graphics
-import gui
-import particles
+from components import components as com
+from systems import processes as pro
+from systems import carphysics as carphys
+from systems import graphics
+from systems import gui
+from systems import particles
 # Other
-import functions as func
-import constants
+from other import constants
 
 """
 def drawTextCentred(font, text, color, surface, x, y):
@@ -108,16 +101,17 @@ class SliderProcessor(esper.Processor):
             click = pygame.mouse.get_pressed()[0]
             mx, my = pygame.mouse.get_pos()
 
-            if mx < sldr.bar_x:
-                mx = sldr.bar_x
-            elif mx > sldr.bar_x - sldr.slider_width + sldr.bar_width:
-                mx = sldr.bar_x - sldr.slider_width + sldr.bar_width
-
             slider_bar = pygame.Rect(sldr.bar_x, sldr.bar_y, sldr.bar_width, sldr.bar_height)
             pygame.draw.rect(self.renderer, sldr.bar_color, slider_bar)
+
             if slider_bar.collidepoint((mx,my)):
                 if click:
                     sldr.slider_pos = mx
+                    if mx < sldr.bar_x:
+                        sldr.slider_pos = sldr.bar_x
+                    elif mx > sldr.bar_x - sldr.slider_width + sldr.bar_width:
+                        sldr.slider_pos = sldr.bar_x - sldr.slider_width + sldr.bar_width
+                        
             slider_slider = pygame.Rect(sldr.slider_pos, sldr.bar_y, sldr.slider_width, sldr.bar_height)
             pygame.draw.rect(self.renderer, sldr.slider_color, slider_slider)
             actual_slider_pos = sldr.slider_pos - sldr.bar_x

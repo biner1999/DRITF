@@ -1,13 +1,9 @@
+import math
+
 import esper
 import pygame
-import components as com
-import constants
-import numpy as np
-import math
-import pytmx
-import random
-import time
-from collections import defaultdict
+from components import components as com
+from other import constants
 
 class DisplayBoxText(esper.Processor):
 
@@ -104,4 +100,4 @@ class Timer(esper.Processor):
             tme.time -= dt.dt
             txt.text = str(math.ceil(tme.time))
             if tme.time <= 0:
-                pass # Turn the loop off
+                self.world.component_for_entity(19, com.States).current_state = "menu" # Turn the loop off

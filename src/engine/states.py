@@ -1,11 +1,5 @@
 # Imports
 # General libraries
-import sys
-import time
-import random
-import math
-import numpy as np
-from scipy import interpolate
 
 # Game related libraries
 import pygame
@@ -16,26 +10,22 @@ import pytmx
 
 # My files
 # ECS
-import inputt
-import components as com
-import processes as pro
-import carphysics as carphys
-import graphics
-import gui
-import particles
-import menus
+from components import components as com
+from systems import processes as pro
+from systems import carphysics as carphys
+from systems import graphics
+from systems import gui
+from systems import particles
+from systems import menus
 
 # Other
-import functions as func
-import constants
+from other import constants
 
 class LoadUnloadd:
 
     def load_game(self, world, screen, entities):
 
         world.add_processor(pro.DeltaTimeProcessor(), 900)
-
-        #world.add_processor(inputt.InputProcessor(), 800)
 
         world.add_processor(carphys.SteeringProcessor())
         world.add_processor(carphys.RPMTorqueProcessor())
@@ -84,6 +74,7 @@ class LoadUnloadd:
         world.remove_processor(particles.RenderParticlesProcessor)
 
         world.remove_processor(gui.Gear)
+        world.remove_processor(gui.Speed)
         world.remove_processor(gui.TotalPointsCalculaton)
         world.remove_processor(gui.SinglePointsCalculaton)
 
@@ -95,51 +86,20 @@ class LoadUnloadd:
     def load_menu(self, world, renderer, entities):
         world.add_processor(menus.BackgroundProcessor(renderer))
         world.add_processor(menus.ButtonProcessor(renderer))
-    """
-
-                screen.fill((100,5,5))
-                drawTextCentred(myfont, "DRITF!", (155, 155, 155), screen, screen.get_width()/2, screen.get_height()/5)
-
-                """
-        #world.add_processor(pro.)
 
     def unload_menu(self, world):
         world.remove_processor(menus.BackgroundProcessor)
         world.remove_processor(menus.ButtonProcessor)
-        #world.remove_processor(pro.)
 
     def load_tuning(self, world, renderer, entities):
         world.add_processor(menus.BackgroundProcessor(renderer))
         world.add_processor(menus.ButtonProcessor(renderer))
         world.add_processor(menus.SliderProcessor(renderer))
-        """
-            # Run until the user asks to quit
-
-            screen.fill((100,5,5))
-
-            mx, my = pygame.mouse.get_pos()
-            slider(screen, screen.get_width()/4*2, 50, screen.get_width()/4, 400, (155, 155, 155), 30, (255, 255, 255), world.component_for_entity(car, com.Steering).max_angle, 30, 80, mx, my, click)
-            drawTextCentred(mysmallfont, str(world.component_for_entity(car, com.Steering).max_angle), (0, 0, 0), screen, screen.get_width()/6*5, 400+25)
-            drawTextCentred(mysmallfont, "Steering Angle", (0, 0, 0), screen, screen.get_width()/2, 400-25)
-
-            back_button = pygame.Rect(50, 50, 300, 120)
-            pygame.draw.rect(screen, (240, 240, 240), back_button) 
-            drawTextCentred(myfont, "BACK", (0, 0, 0), screen, (back_button.x + back_button.width/2), (back_button.y + back_button.height/2))
-
-            drawTextCentred(myfont, "DRITF!", (155, 155, 155), screen, screen.get_width()/2, screen.get_height()/5)
-
-
-            if back_button.collidepoint((mx, my)):
-                if click:
-                    running = False
-            """
-        #world.add_processor(pro.)
 
     def unload_tuning(self, world):
         world.remove_processor(menus.BackgroundProcessor)
         world.remove_processor(menus.ButtonProcessor)
         world.remove_processor(menus.SliderProcessor)
-        #world.remove_processor(pro.)
 
 class StateProcessor(esper.Processor, LoadUnloadd):
 
@@ -163,7 +123,7 @@ class StateProcessor(esper.Processor, LoadUnloadd):
                 if state.loaded_state == "menu":
                     pass
                 else:
-                    LoadUnload.unload_menu(self.world)
+                    LoadUnload.unload_tuning(self.world)
                     LoadUnload.unload_game(self.world)
                     LoadUnload.load_menu(self.world, self.renderer, self.entities)
                     state.loaded_state = "menu"
