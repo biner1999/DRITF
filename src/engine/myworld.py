@@ -8,7 +8,8 @@ import pygame
 from pygame.locals import *
 from pygame.joystick import *
 import esper
-import pytmx
+#from pytmx import pytmx
+from pytmx import util_pygame as pytmx
 
 # My files
 # ECS

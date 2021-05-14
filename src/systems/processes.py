@@ -12,7 +12,6 @@ import pygame
 from pygame.locals import *
 from pygame.joystick import *
 import esper
-import pytmx
 
 # My files
 # ECS
